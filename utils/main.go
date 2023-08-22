@@ -1,6 +1,6 @@
 package utils
 
-func stk() int {
+func Stk() int {
 
 	s := 10
 	for i := 0; i < s; i++ {
