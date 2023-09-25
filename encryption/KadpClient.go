@@ -7,9 +7,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/andang-security/kadp/encryption/rsa"
+	"github.com/andang-security/kadp/algorithm"
 	"github.com/andang-security/kadp/utils"
-	"log"
+	"github.com/go-irain/logger"
+	"github.com/zalando/go-keyring"
 	"regexp"
 )
 
@@ -31,29 +32,30 @@ func NewKADPClient(domain, credential string) *KadpClient {
 		credential:      credential,
 		labelCipherText: make(map[string]string),
 	}
-	log.Println(domain, credential)
+	logger.Debug("准备进行连接:", domain, credential)
 	KADPClient.init()
 
 	return KADPClient
 }
 
 func (client *KadpClient) init() {
-	publicKey, privateKey := rsa.KeyGenerator()
+	publicKey, privateKey := KeyGenerator()
 	keyPair["publicKey"] = publicKey
 	keyPair["privateKey"] = privateKey
-	base64PublicKey, err := rsa.ExtractBase64FromPEM(publicKey)
+	base64PublicKey, err := ExtractBase64FromPEM(publicKey)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
 	mac := utils.GetMac()
 	system := utils.GetOsInfo()
-	ip := "192.168.0.122"
+	ip, _ := utils.GetOutBoundIP()
 
-	decrypt, err := client.decrypt(client.credential, []byte("XIANANDANGGONGSI"))
-	log.Println("解密：" + decrypt)
+	decrypt, err := client.keyDecrypt(client.credential, []byte("XIANANDANGGONGSI"))
+	logger.Debug("准备进行token解析:", decrypt)
+
 	if err != nil {
-		log.Println("Failed to decrypt:", err)
+		logger.Error("Failed to decrypt:", err)
 		return
 	}
 
@@ -64,11 +66,11 @@ func (client *KadpClient) init() {
 		"ip":       ip,
 	}
 
-	fmt.Println("发送请求", reqMap)
-
 	credentialMap := map[string]string{
 		"token": decrypt,
 	}
+
+	logger.Debug("开始连接:", reqMap)
 
 	result, err := utils.SendRequest("POST", client.domain+"/v1/ksp/open_api/auth", credentialMap, reqMap)
 
@@ -77,9 +79,9 @@ func (client *KadpClient) init() {
 	tokenMap["token"] = resultMap["data"].(string)
 
 	if err != nil {
-		log.Println("Failed to send request:", err)
+		logger.Error("Failed to send request:", err)
 	}
-	log.Println("结果", result)
+	logger.Debug("连接结果：", result)
 
 }
 
@@ -89,11 +91,11 @@ func (client *KadpClient) GetDekCipherText(label string, length int) {
 		"label":  label,
 		"length": length,
 	}
-	log.Println("发送token：", tokenMap)
+	logger.Debug("正在获取kek，发送token：", tokenMap)
 
 	result, err := utils.SendRequest("POST", client.domain+"/v1/ksp/open_api/dek_text", tokenMap, reqMap)
 
-	log.Println("获取结果：", result)
+	logger.Debug("kek获取结果：", result)
 	var resultMap map[string]interface{}
 	resultMap = result.(map[string]interface{})
 	code := resultMap["code"].(float64)
@@ -102,56 +104,54 @@ func (client *KadpClient) GetDekCipherText(label string, length int) {
 		client.init()
 		result, err := utils.SendRequest("POST", client.domain+"/v1/ksp/open_api/dek_text", tokenMap, reqMap)
 		if err != nil {
-			fmt.Println("", err)
+			logger.Error("", err)
 		}
 		resultMap = result.(map[string]interface{})
 	}
 	data := resultMap["data"].(string)
 
 	privateKey := keyPair["privateKey"]
-	fmt.Println("取出" + privateKey)
-	dekText, err := rsa.DecryptWithPrivateKey(privateKey, data)
+	dekText, err := DecryptWithPrivateKey(privateKey, data)
 	if err != nil {
 		fmt.Println(err)
 	}
-	log.Println("解密出", dekText)
+	logger.Debug("使用RSA进行解析：", dekText)
 
 	if err != nil {
-		log.Println("Failed to send request:", err)
+		logger.Error("Failed to send request:", err)
 	}
 
 	var TextJson map[string]string
 	err = json.Unmarshal([]byte(dekText), &TextJson)
 	if err != nil {
-		fmt.Println("解析 JSON 失败:", err)
+		logger.Error("解析 JSON 失败:", err)
 		return
 	}
 
 	versionValue := TextJson["version"]
 
 	client.labelCipherText[label] = dekText
-	log.Println("存入dek", client.labelCipherText)
+	logger.Debug("kekMap：", client.labelCipherText)
 	client.version = versionValue
 	client.cipherTextDecrypt(label)
 
 }
 
 func (client *KadpClient) cipherTextDecrypt(label string) string {
+	logger.Debug("准备解密dek")
 	dekCipherReq := client.labelCipherText[label]
-	fmt.Println("准备发送", label+dekCipherReq)
-	fmt.Println("token发送", tokenMap)
 
 	var TextJson map[string]string
 	err := json.Unmarshal([]byte(dekCipherReq), &TextJson)
 	if err != nil {
-		fmt.Println(err)
+		logger.Error("解析 JSON 失败:", err)
 	}
 
 	result, err := utils.SendRequest("POST", client.domain+"/v1/ksp/open_api/dek", tokenMap, TextJson)
 	if err != nil {
-		fmt.Println(err)
+		logger.Error("请求dek解密失败", err)
 	}
-	log.Println("获取结果：", result)
+	logger.Debug("获取结果：", result)
 	var resultMap map[string]interface{}
 	resultMap = result.(map[string]interface{})
 	code := resultMap["code"].(float64)
@@ -159,33 +159,52 @@ func (client *KadpClient) cipherTextDecrypt(label string) string {
 		client.init()
 		result, err = utils.SendRequest("POST", client.domain+"/v1/ksp/open_api/dek", tokenMap, dekCipherReq)
 		if err != nil {
-			fmt.Println("", err)
+			logger.Error("请求失败", err)
 		}
 		resultMap = result.(map[string]interface{})
 	}
 	dek := resultMap["data"].(string)
 	privateKey := keyPair["privateKey"]
-	dekKeyBase, err := rsa.DecryptWithPrivateKey(privateKey, dek)
+	dekKeyBase, err := DecryptWithPrivateKey(privateKey, dek)
 	if err != nil {
-		fmt.Println(err)
+		logger.Error(err)
 	}
-	fmt.Println(dekKeyBase)
+	logger.Debug("dek明文获取,Base64编码：" + dekKeyBase)
+	err = keyring.Set("kadp", label, dekKeyBase)
+	if err != nil {
+		return ""
+	}
 
 	return dekKeyBase
 
 }
 
 func (client *KadpClient) getKey(length int, label string) (string, error) {
+
 	if length != 16 && length != 32 && length != 24 {
 		return "", errors.New("length parameter error, can only be 16-24-32")
 	}
-	if client.labelCipherText[label] == "" {
-		client.GetDekCipherText(label, length)
+
+	key, err := keyring.Get("kadp", label)
+	if err != nil {
+		logger.Error(err)
 	}
-	return client.cipherTextDecrypt(label), nil
+	logger.Debug("getkey," + key)
+
+	if key == "" {
+		logger.Debug("正在获取key")
+		if client.labelCipherText[label] == "" {
+			client.GetDekCipherText(label, length)
+		} else {
+			client.cipherTextDecrypt(label)
+		}
+		key, _ = keyring.Get("kadp", label)
+	}
+
+	return key, nil
 }
 
-func (client *KadpClient) decrypt(ciphertext string, key []byte) (string, error) {
+func (client *KadpClient) keyDecrypt(ciphertext string, key []byte) (string, error) {
 
 	decodeCiphertext, err := base64.StdEncoding.DecodeString(ciphertext)
 
@@ -217,19 +236,20 @@ func (client *KadpClient) decrypt(ciphertext string, key []byte) (string, error)
 	return trimmedToken, nil
 }
 
-func (client *KadpClient) FpeEncipher(plaintext string, fpe Fpe, radix, length int, label string) (string, error) {
+func (client *KadpClient) FpeEncipher(plaintext string, fpe algorithm.Fpe, radix, length int, label string) (string, error) {
 
 	key, err := client.getKey(length, label)
+	logger.Debug("获取到key：", key)
 	if err != nil {
-		return key, err
+		return "", err
 	}
 
 	var ciphertext string
 	switch fpe {
-	case FF1:
-		ciphertext, _ = ff1Encrypt(plaintext, key, radix)
-	case FF3:
-		fmt.Println("Value2 selected")
+	case algorithm.FF1:
+		ciphertext, err = ff1Encrypt(plaintext, key, radix)
+	case algorithm.FF3:
+		ciphertext, err = ff3Encrypt(plaintext, key, radix)
 	default:
 		fmt.Println("Invalid value")
 	}
@@ -240,17 +260,18 @@ func (client *KadpClient) FpeEncipher(plaintext string, fpe Fpe, radix, length i
 	return ciphertext, err
 }
 
-func (client *KadpClient) FpeDecipher(ciphertext string, fpe Fpe, radix, length int, label string) (string, error) {
-
+func (client *KadpClient) FpeDecipher(ciphertext string, fpe algorithm.Fpe, radix, length int, label string) (string, error) {
+	logger.Debug("正在解密")
 	key, err := client.getKey(length, label)
+	logger.Debug("获取到key", key)
 	if err != nil {
 		return key, err
 	}
 	var plaintext string
 	switch fpe {
-	case FF1:
+	case algorithm.FF1:
 		plaintext, err = ff1Decrypt(ciphertext, key, radix)
-	case FF3:
+	case algorithm.FF3:
 		plaintext, err = ff3encrypt(ciphertext, key, radix)
 	default:
 		fmt.Println("Invalid value")
@@ -260,4 +281,28 @@ func (client *KadpClient) FpeDecipher(ciphertext string, fpe Fpe, radix, length 
 	}
 
 	return plaintext, err
+}
+
+func (client *KadpClient) Encipher(plaintext string, design algorithm.Symmetry, length int, label, iv string) (string, error) {
+
+	key, err := client.getKey(length, label)
+	logger.Debug("获取到key：", key)
+	if err != nil {
+		return "", err
+	}
+
+	var ciphertext string
+	switch design {
+	case algorithm.AES:
+		ciphertext, err = aesEncrypt([]byte(plaintext), []byte(key), []byte(iv))
+	//case algorithm.FF3:
+	//	ciphertext, err = ff3Encrypt(plaintext, key, radix)
+	default:
+		fmt.Println("Invalid value")
+	}
+	if err != nil {
+		return "", err
+	}
+
+	return ciphertext, err
 }

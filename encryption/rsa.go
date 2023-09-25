@@ -1,4 +1,4 @@
-package rsa
+package encryption
 
 import (
 	"crypto/rand"
@@ -62,8 +62,6 @@ func EncryptWithPublicKey(publicKey, plaintext string) (string, error) {
 }
 
 func DecryptWithPrivateKey(privateKeyPEM, ciphertext string) (string, error) {
-	log.Println("解密开始：" + ciphertext)
-	log.Println("解密开始：" + privateKeyPEM)
 
 	ciphertextByte, _ := base64.StdEncoding.DecodeString(ciphertext)
 

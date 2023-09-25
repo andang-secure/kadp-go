@@ -1,4 +1,4 @@
-package aes
+package encryption
 
 import (
 	"bytes"
@@ -7,8 +7,8 @@ import (
 	"encoding/base64"
 )
 
-// 使用AES-CBC/NoPadding模式加密数据
-func encrypt(plaintext []byte, key []byte, iv []byte) ([]byte, error) {
+// aesEncrypt 使用AES-CBC/NoPadding模式加密数据
+func aesEncrypt(plaintext []byte, key []byte, iv []byte) (string, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -29,12 +29,12 @@ func encrypt(plaintext []byte, key []byte, iv []byte) ([]byte, error) {
 	mode := cipher.NewCBCEncrypter(block, iv)
 	mode.CryptBlocks(ciphertext, paddedPlaintext)
 
-	base64.StdEncoding.EncodeToString(ciphertext)
-	return ciphertext, nil
+	cipherTextBase64 := base64.StdEncoding.EncodeToString(ciphertext)
+	return cipherTextBase64, nil
 }
 
-// 使用AES-CBC/NoPadding模式解密数据
-func decrypt(ciphertext []byte, key []byte) ([]byte, error) {
+// aseDecrypt  使用AES-CBC/NoPadding模式解密数据
+func aseDecrypt(ciphertext []byte, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
