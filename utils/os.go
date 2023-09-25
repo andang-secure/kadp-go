@@ -303,3 +303,14 @@ func getMacPhysicalMacAddress(iface string) (string, error) {
 
 	return "", fmt.Errorf("no MAC address found for %s", iface)
 }
+
+func GetOutBoundIP() (ip string, err error) {
+	conn, err := net.Dial("udp", "8.8.8.8:53")
+	if err != nil {
+		return "", err
+	}
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	//fmt.Println(localAddr.String())
+	ip = strings.Split(localAddr.String(), ":")[0]
+	return ip, nil
+}
