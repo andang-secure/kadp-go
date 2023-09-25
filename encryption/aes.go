@@ -11,7 +11,7 @@ import (
 func aesEncrypt(plaintext []byte, key []byte, iv []byte) (string, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	// 对明文进行填充
