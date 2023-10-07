@@ -1,4 +1,4 @@
-module github.com/andang-security/kadp
+module github.com/andang-security/kadp-go
 
 go 1.20
 
