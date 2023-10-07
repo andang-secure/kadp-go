@@ -48,8 +48,15 @@ func (client *KadpClient) init() {
 	}
 
 	mac := utils.GetMac()
-	system := utils.GetOsInfo()
+
+	system, err := utils.GetOsInfo()
+	if err != nil {
+		logger.Error("获取系统失败")
+	}
 	ip, _ := utils.GetOutBoundIP()
+	logger.Debug("获取mac:", mac)
+	logger.Debug("获取os:", system)
+	logger.Debug("获取ip", ip)
 
 	decrypt, err := client.keyDecrypt(client.credential, []byte("XIANANDANGGONGSI"))
 	logger.Debug("准备进行token解析:", decrypt)
@@ -75,6 +82,10 @@ func (client *KadpClient) init() {
 	result, err := utils.SendRequest("POST", client.domain+"/v1/ksp/open_api/auth", credentialMap, reqMap)
 
 	var resultMap map[string]interface{}
+	if result == nil {
+		logger.Error("认证连接失败，请检查地址")
+	}
+
 	resultMap = result.(map[string]interface{})
 	tokenMap["token"] = resultMap["data"].(string)
 
@@ -207,6 +218,9 @@ func (client *KadpClient) getKey(length int, label string) (string, error) {
 func (client *KadpClient) keyDecrypt(ciphertext string, key []byte) (string, error) {
 
 	decodeCiphertext, err := base64.StdEncoding.DecodeString(ciphertext)
+	if err != nil {
+		return "", err
+	}
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -283,7 +297,7 @@ func (client *KadpClient) FpeDecipher(ciphertext string, fpe algorithm.Fpe, radi
 	return plaintext, err
 }
 
-func (client *KadpClient) Encipher(plaintext string, design algorithm.Symmetry, length int, label, iv string) (string, error) {
+func (client *KadpClient) Encipher(plaintext []byte, design algorithm.Symmetry, length int, label string) (string, error) {
 
 	key, err := client.getKey(length, label)
 	logger.Debug("获取到key：", key)
@@ -294,7 +308,7 @@ func (client *KadpClient) Encipher(plaintext string, design algorithm.Symmetry, 
 	var ciphertext string
 	switch design {
 	case algorithm.AES:
-		ciphertext, err = aesEncrypt([]byte(plaintext), []byte(key), []byte(iv))
+		ciphertext, err = aesEncrypt(plaintext, []byte(key))
 	//case algorithm.FF3:
 	//	ciphertext, err = ff3Encrypt(plaintext, key, radix)
 	default:
@@ -305,4 +319,28 @@ func (client *KadpClient) Encipher(plaintext string, design algorithm.Symmetry, 
 	}
 
 	return ciphertext, err
+}
+
+func (client *KadpClient) Decipher(ciphertext string, design algorithm.Symmetry, length int, label string) (string, error) {
+
+	key, err := client.getKey(length, label)
+	logger.Debug("获取到key：", key)
+	if err != nil {
+		return "", err
+	}
+
+	var plaintext string
+	switch design {
+	case algorithm.AES:
+		plaintext, err = aseDecrypt(ciphertext, []byte(key))
+	//case algorithm.FF3:
+	//	ciphertext, err = ff3Encrypt(plaintext, key, radix)
+	default:
+		fmt.Println("Invalid value")
+	}
+	if err != nil {
+		return "", err
+	}
+
+	return plaintext, err
 }
