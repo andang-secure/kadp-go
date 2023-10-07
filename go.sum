@@ -1,7 +1,5 @@
 github.com/alessio/shellescape v1.4.1 h1:V7yhSDDn8LP4lc4jS8pFkt0zCnzVJlG5JXy9BVKJUX0=
 github.com/alessio/shellescape v1.4.1/go.mod h1:PZAiSCk0LJaZkiCSkPv8qIobYglO3FPpyFjDCtHLS30=
-github.com/andang-security/kadp-go v0.0.0-20231007092053-9299f57ef292 h1:VTL7Vc2kS0tVXnRTUbQZ8Ft255ZYirNZbWhMVbwKZa0=
-github.com/andang-security/kadp-go v0.0.0-20231007092053-9299f57ef292/go.mod h1:muviBATB3PgddBC0gnoDnHLsyzz+66yNW5k2DjZ0Pzs=
 github.com/capitalone/fpe v1.2.1 h1:/r81KhhTkfmxjjr2HKr+WYTLrMjPnn0gtK/L8gKNfts=
 github.com/capitalone/fpe v1.2.1/go.mod h1:hI6YzL2v2WkosaevH24sYHyyDAzacfqkpaOYc/0Qn7g=
 github.com/danieljoos/wincred v1.2.0 h1:ozqKHaLK0W/ii4KVbbvluM91W2H3Sh0BncbUNPS7jLE=

@@ -3,7 +3,6 @@ module github.com/andang-security/kadp-go
 go 1.20
 
 require (
-	github.com/andang-security/kadp-go v0.0.0-20231007092053-9299f57ef292
 	github.com/capitalone/fpe v1.2.1
 	github.com/go-irain/logger v0.0.0-20230223072524-081176c345af
 	github.com/zalando/go-keyring v0.2.3
