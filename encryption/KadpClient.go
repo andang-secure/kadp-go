@@ -7,10 +7,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/andang-security/kadp/algorithm"
-	"github.com/andang-security/kadp/utils"
+	"github.com/andang-security/kadp-go/algorithm"
+	"github.com/andang-security/kadp-go/utils"
 	"github.com/go-irain/logger"
 	"github.com/zalando/go-keyring"
+	"log"
 	"regexp"
 )
 
@@ -32,7 +33,7 @@ func NewKADPClient(domain, credential string) *KadpClient {
 		credential:      credential,
 		labelCipherText: make(map[string]string),
 	}
-	logger.Debug("准备进行连接:", domain, credential)
+	log.Println("准备进行连接:", domain, credential)
 	KADPClient.init()
 
 	return KADPClient
