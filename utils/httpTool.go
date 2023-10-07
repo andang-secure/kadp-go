@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/go-irain/logger"
 	"io/ioutil"
 	"net/http"
 )
@@ -51,6 +52,8 @@ func SendRequest(method, url string, header map[string]string, params interface{
 		fmt.Println("Response decoding error:", err)
 		return nil, err
 	}
+
+	logger.Info("获取请求：", result)
 	// 处理响应数据
 	fmt.Println("Response Data:", result)
 	return result, nil
