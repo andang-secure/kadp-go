@@ -97,7 +97,7 @@ func (client *KadpClient) init() {
 
 }
 
-func (client *KadpClient) GetDekCipherText(label string, length int) {
+func (client *KadpClient) getDekCipherText(label string, length int) {
 
 	reqMap := map[string]interface{}{
 		"label":  label,
@@ -206,7 +206,7 @@ func (client *KadpClient) getKey(length int, label string) (string, error) {
 	if key == "" {
 		logger.Debug("正在获取key")
 		if client.labelCipherText[label] == "" {
-			client.GetDekCipherText(label, length)
+			client.getDekCipherText(label, length)
 		} else {
 			client.cipherTextDecrypt(label)
 		}
