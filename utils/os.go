@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/go-irain/logger"
 	"io/ioutil"
 	"net"
 	"os/exec"
@@ -13,23 +14,25 @@ import (
 	"strings"
 )
 
-func GetOsInfo() string {
-
+func GetOsInfo() (string, error) {
 	goos := runtime.GOOS
 	var osInfo string
+	var err error
 
-	if goos == "linux" {
-		osInfo, _ = linuxOsInfo()
-
-	} else if goos == "windows" {
-		osInfo, _ = windowsOsInfo()
-
-	} else if goos == "darwin" {
-		osInfo, _ = macOsInfo()
+	switch goos {
+	case "linux":
+		osInfo, err = linuxOsInfo()
+	case "windows":
+		logger.Debug("开始获取")
+		osInfo, err = windowsOsInfo()
+	case "darwin":
+		osInfo, err = macOsInfo()
 		// 获取 macOS 系统的详细信息的方法
+	default:
+		err = fmt.Errorf("Unsupported operating system: %s", goos)
 	}
-	return osInfo
 
+	return osInfo, err
 }
 
 func windowsOsInfo() (string, error) {
