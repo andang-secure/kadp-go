@@ -179,6 +179,7 @@ func isVirtualInterface(iface net.Interface) bool {
 }
 
 func getLinuxMac() (macAddr string, err error) {
+	logger.Debug("获取到是Linux系统，正在获取mac")
 	interfaces, err := net.Interfaces()
 	if err != nil {
 		fmt.Printf("Failed to get net interfaces: %v\n", err)
