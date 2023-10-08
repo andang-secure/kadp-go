@@ -132,6 +132,7 @@ func GetMac() string {
 	goos := runtime.GOOS
 	var osInfo string
 
+	logger.Debug("获取到系统：", goos)
 	if goos == "linux" {
 		osInfo, _ = getLinuxMac()
 
