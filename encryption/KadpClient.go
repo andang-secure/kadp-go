@@ -13,6 +13,7 @@ import (
 	"github.com/zalando/go-keyring"
 	"log"
 	"regexp"
+	"runtime"
 )
 
 type KadpClient struct {
@@ -182,7 +183,11 @@ func (client *KadpClient) cipherTextDecrypt(label string) string {
 		logger.Error(err)
 	}
 	logger.Debug("dek明文获取,Base64编码：" + dekKeyBase)
-	keyring.MockInit()
+
+	goos := runtime.GOOS
+	if goos == "linux" {
+		keyring.MockInit()
+	}
 	err = keyring.Set("kadp", label, dekKeyBase)
 	if err != nil {
 		return ""
