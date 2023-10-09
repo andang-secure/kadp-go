@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -181,34 +182,46 @@ func isVirtualInterface(iface net.Interface) bool {
 
 func getLinuxMac() (macAddr string, err error) {
 	logger.Debug("获取到是Linux系统，正在获取mac")
-	interfaces, err := net.Interfaces()
+
+	netInterfaces, err := net.Interfaces()
 	if err != nil {
-		fmt.Printf("Failed to get net interfaces: %v\n", err)
-		return "", err
+		fmt.Printf("fail to get net interfaces: %v", err)
+		return macAddr, err
 	}
 
-	for _, iface := range interfaces {
-		if !isLinuxVirtualInterface(iface.Name) {
-			macAddr, err = getPhysicalMacAddress(iface.Name)
-			if err == nil && len(macAddr) > 0 {
-				return macAddr, nil
-			}
+	for _, netInterface := range netInterfaces {
+		macAddr = netInterface.HardwareAddr.String()
+		if len(macAddr) == 0 || !isPhysicalInterface(&netInterface) {
+			continue
 		}
+
+		return macAddr, nil
 	}
 
-	return "", fmt.Errorf("no active physical MAC address found")
+	return macAddr, nil
+
 }
 
-func isLinuxVirtualInterface(ifaceName string) bool {
-	virtualInterfaces := []string{"vmnet", "virbr", "veth", "docker", "lo"}
+func isPhysicalInterface(iface *net.Interface) bool {
+	flagsPath := "/sys/class/net/" + iface.Name + "/flags"
 
-	for _, v := range virtualInterfaces {
-		if strings.HasPrefix(ifaceName, v) {
-			return true
-		}
+	flagsStr, err := ioutil.ReadFile(flagsPath)
+	if err != nil {
+		fmt.Printf("fail to read flags for interface %s: %v", iface.Name, err)
+		return false
 	}
 
-	return false
+	flags, err := strconv.ParseInt(strings.TrimSpace(string(flagsStr)), 0, 64)
+	if err != nil {
+		fmt.Printf("fail to parse flags for interface %s: %v", iface.Name, err)
+		return false
+	}
+
+	isLoopback := (flags & (1 << 7)) != 0
+	isPointToPoint := (flags & (1 << 15)) != 0
+	isVirtual := (flags & (1 << 16)) != 0
+
+	return !isLoopback && !isPointToPoint && !isVirtual
 }
 
 func getPhysicalMacAddress(ifaceName string) (macAddr string, err error) {
