@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/andang-security/kadp-go/algorithm"
+	"github.com/andang-security/kadp-go/mode"
+	"github.com/andang-security/kadp-go/padding"
 	"github.com/andang-security/kadp-go/utils"
 	"github.com/go-irain/logger"
 	"github.com/zalando/go-keyring"
@@ -258,7 +260,7 @@ func (client *KadpClient) keyDecrypt(ciphertext string, key []byte) (string, err
 	return trimmedToken, nil
 }
 
-func (client *KadpClient) FpeEncipher(plaintext string, fpe algorithm.Fpe, tweak string, radix, length int, label string) (string, error) {
+func (client *KadpClient) FpeEncipher(plaintext string, fpe algorithm.Fpe, tweak string, radix, length int, label string, start, end int) (string, error) {
 
 	key, err := client.getKey(length, label)
 	logger.Debug("获取到key：", key)
@@ -269,9 +271,9 @@ func (client *KadpClient) FpeEncipher(plaintext string, fpe algorithm.Fpe, tweak
 	var ciphertext string
 	switch fpe {
 	case algorithm.FF1:
-		ciphertext, err = ff1Encrypt(plaintext, key, tweak, radix)
+		ciphertext, err = ff1Encrypt(plaintext, key, tweak, radix, start, end)
 	case algorithm.FF3:
-		ciphertext, err = ff3Encrypt(plaintext, key, tweak, radix)
+		ciphertext, err = ff3Encrypt(plaintext, key, tweak, radix, start, end)
 	default:
 		fmt.Println("Invalid value")
 	}
@@ -282,7 +284,7 @@ func (client *KadpClient) FpeEncipher(plaintext string, fpe algorithm.Fpe, tweak
 	return ciphertext, err
 }
 
-func (client *KadpClient) FpeDecipher(ciphertext string, fpe algorithm.Fpe, tweak string, radix, length int, label string) (string, error) {
+func (client *KadpClient) FpeDecipher(ciphertext string, fpe algorithm.Fpe, tweak string, radix, length int, label string, start, end int) (string, error) {
 	logger.Debug("正在解密")
 	key, err := client.getKey(length, label)
 	logger.Debug("获取到key", key)
@@ -292,9 +294,9 @@ func (client *KadpClient) FpeDecipher(ciphertext string, fpe algorithm.Fpe, twea
 	var plaintext string
 	switch fpe {
 	case algorithm.FF1:
-		plaintext, err = ff1Decrypt(ciphertext, key, tweak, radix)
+		plaintext, err = ff1Decrypt(ciphertext, key, tweak, radix, start, end)
 	case algorithm.FF3:
-		plaintext, err = ff3Decrypt(ciphertext, key, tweak, radix)
+		plaintext, err = ff3Decrypt(ciphertext, key, tweak, radix, start, end)
 	default:
 		fmt.Println("Invalid value")
 	}
@@ -305,7 +307,7 @@ func (client *KadpClient) FpeDecipher(ciphertext string, fpe algorithm.Fpe, twea
 	return plaintext, err
 }
 
-func (client *KadpClient) Encipher(plaintext []byte, design algorithm.Symmetry, length int, label string) (string, error) {
+func (client *KadpClient) Encipher(plaintext []byte, design algorithm.Symmetry, modeVal mode.Mode, paddingVal padding.Padding, length int, label, iv string) (string, error) {
 
 	key, err := client.getKey(length, label)
 	logger.Debug("获取到key：", key)
@@ -316,7 +318,14 @@ func (client *KadpClient) Encipher(plaintext []byte, design algorithm.Symmetry, 
 	var ciphertext string
 	switch design {
 	case algorithm.AES:
-		ciphertext, err = aesEncrypt(plaintext, []byte(key))
+		if modeVal == mode.CBC {
+			if paddingVal == padding.PKCS5Padding {
+				ciphertext, err = aseCbcPKCS5Encrypt(plaintext, []byte(key), []byte(iv))
+			} else {
+				ciphertext, err = aseCbcNoPadEncrypt(plaintext, []byte(key), []byte(iv))
+			}
+
+		}
 	case algorithm.SM4:
 		ciphertext, err = sm4Encrypt(plaintext, []byte(key))
 	default:
@@ -329,7 +338,7 @@ func (client *KadpClient) Encipher(plaintext []byte, design algorithm.Symmetry, 
 	return ciphertext, err
 }
 
-func (client *KadpClient) Decipher(ciphertext string, design algorithm.Symmetry, length int, label string) (string, error) {
+func (client *KadpClient) Decipher(ciphertext string, design algorithm.Symmetry, modeVal mode.Mode, paddingVal padding.Padding, length int, label, iv string) (string, error) {
 
 	key, err := client.getKey(length, label)
 	logger.Debug("获取到key：", key)
@@ -340,7 +349,15 @@ func (client *KadpClient) Decipher(ciphertext string, design algorithm.Symmetry,
 	var plaintext string
 	switch design {
 	case algorithm.AES:
-		plaintext, err = aseDecrypt(ciphertext, []byte(key))
+
+		if modeVal == mode.CBC {
+			if paddingVal == padding.PKCS5Padding {
+				plaintext, err = aseCbcPKCS5Decrypt(ciphertext, []byte(key), []byte(iv))
+			} else {
+				plaintext, err = aseCbcNoPadDecrypt(ciphertext, []byte(key), []byte(iv))
+			}
+
+		}
 	case algorithm.SM4:
 
 		plaintext, err = sm4Decrypt(ciphertext, []byte(key))

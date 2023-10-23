@@ -8,7 +8,7 @@ import (
 )
 
 // aesEncrypt 使用AES-CBC/NoPadding模式加密数据
-func aesEncrypt(plaintext []byte, key []byte) (string, error) {
+func aseCbcNoPadEncrypt(plaintext []byte, key []byte, iv []byte) (string, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return "", err
@@ -20,12 +20,6 @@ func aesEncrypt(plaintext []byte, key []byte) (string, error) {
 
 	ciphertext := make([]byte, len(paddedPlaintext))
 
-	iv := make([]byte, aes.BlockSize)
-	// 可以使用随机生成的IV，或者使用固定的IV
-	// 如果使用固定的IV，请确保每次加密的IV都是唯一的
-	// 如果使用随机生成的IV，请确保在解密时将IV与密文一起传递
-	copy(iv, key) // 这里示例简化，将IV设置为密钥
-
 	mode := cipher.NewCBCEncrypter(block, iv)
 	mode.CryptBlocks(ciphertext, paddedPlaintext)
 
@@ -34,15 +28,11 @@ func aesEncrypt(plaintext []byte, key []byte) (string, error) {
 }
 
 // aseDecrypt  使用AES-CBC/NoPadding模式解密数据
-func aseDecrypt(ciphertext string, key []byte) (string, error) {
+func aseCbcNoPadDecrypt(ciphertext string, key []byte, iv []byte) (string, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return "", err
 	}
-
-	iv := make([]byte, aes.BlockSize)
-	// 这里示例简化，将IV设置为密钥
-	copy(iv, key)
 
 	textByte, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
@@ -59,4 +49,46 @@ func aseDecrypt(ciphertext string, key []byte) (string, error) {
 	plaintext = plaintext[:len(plaintext)-padding]
 
 	return string(plaintext), nil
+}
+
+func aseCbcPKCS5Encrypt(plaintext []byte, key []byte, iv []byte) (string, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+
+	blockSize := block.BlockSize()
+	plaintext = aesPKCS5Padding(plaintext, blockSize)
+	blockMode := cipher.NewCBCEncrypter(block, iv)
+	ciphertext := make([]byte, len(plaintext))
+	blockMode.CryptBlocks(ciphertext, plaintext)
+	cipherTextBase64 := base64.StdEncoding.EncodeToString(ciphertext)
+
+	return cipherTextBase64, nil
+}
+
+func aseCbcPKCS5Decrypt(ciphertext string, key []byte, iv []byte) (string, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+	textByte, err := base64.StdEncoding.DecodeString(ciphertext)
+
+	blockMode := cipher.NewCBCDecrypter(block, iv)
+	origData := make([]byte, len(textByte))
+	blockMode.CryptBlocks(origData, textByte)
+	origData = aesPKCS5UnPadding(origData)
+	return string(origData), nil
+}
+
+func aesPKCS5Padding(ciphertext []byte, blockSize int) []byte {
+	padding := blockSize - len(ciphertext)%blockSize
+	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
+	return append(ciphertext, padtext...)
+}
+
+func aesPKCS5UnPadding(origData []byte) []byte {
+	length := len(origData)
+	unpadding := int(origData[length-1])
+	return origData[:(length - unpadding)]
 }
