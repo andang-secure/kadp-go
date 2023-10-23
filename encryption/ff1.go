@@ -1,22 +1,13 @@
 package encryption
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"github.com/capitalone/fpe/ff1"
 )
 
-func ff1Encrypt(plaintext, key string, radix int) (string, error) {
+func ff1Encrypt(plaintext, key, tweak string, radix int) (string, error) {
 
-	tweak := make([]byte, 16)
-	_, err := rand.Read(tweak)
-	if err != nil {
-		return "", err
-	}
-	tweak, err = hex.DecodeString(string(tweak))
-
-	encrypter, err := ff1.NewCipher(radix, 8, []byte(key), tweak)
+	encrypter, err := ff1.NewCipher(radix, 8, []byte(key), []byte(tweak))
 	if err != nil {
 		fmt.Println("Failed to create FF1 encrypter:", err)
 		return "", err
@@ -31,16 +22,9 @@ func ff1Encrypt(plaintext, key string, radix int) (string, error) {
 	return ciphertext, nil
 }
 
-func ff1Decrypt(ciphertext, key string, radix int) (string, error) {
+func ff1Decrypt(ciphertext, key, tweak string, radix int) (string, error) {
 
-	tweak := make([]byte, 16)
-	_, err := rand.Read(tweak)
-	if err != nil {
-		return "", err
-	}
-	tweak, err = hex.DecodeString(string(tweak))
-
-	decrypter, err := ff1.NewCipher(radix, 8, []byte(key), tweak)
+	decrypter, err := ff1.NewCipher(radix, 8, []byte(key), []byte(tweak))
 	if err != nil {
 		fmt.Println("Failed to create FF1 decrypter:", err)
 		return "", err

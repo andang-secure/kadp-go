@@ -1,24 +1,14 @@
 package encryption
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"github.com/capitalone/fpe/ff3"
 	"log"
 )
 
-func ff3Encrypt(plaintext, key string, radix int) (string, error) {
+func ff3Encrypt(plaintext, key, tweak string, radix int) (string, error) {
 
-	tweak := make([]byte, 16)
-	_, err := rand.Read(tweak)
-	if err != nil {
-		return "", err
-	}
-	tweak, err = hex.DecodeString(string(tweak))
-
-	// 创建 FF1 加密器
-	encrypter, err := ff3.NewCipher(radix, []byte(key), tweak)
+	encrypter, err := ff3.NewCipher(radix, []byte(key), []byte(tweak))
 	if err != nil {
 		fmt.Println("Failed to create FF1 encrypter:", err)
 		return "", err
@@ -34,17 +24,10 @@ func ff3Encrypt(plaintext, key string, radix int) (string, error) {
 	return "", err
 }
 
-func ff3encrypt(ciphertext, key string, radix int) (string, error) {
-
-	tweak := make([]byte, 16)
-	_, err := rand.Read(tweak)
-	if err != nil {
-		return "", err
-	}
-	tweak, err = hex.DecodeString(string(tweak))
+func ff3Decrypt(ciphertext, key, tweak string, radix int) (string, error) {
 
 	// 创建 FF1 解密器
-	decrypter, err := ff3.NewCipher(radix, []byte(key), tweak)
+	decrypter, err := ff3.NewCipher(radix, []byte(key), []byte(tweak))
 	if err != nil {
 		log.Println("Failed to create FF1 decrypter:", err)
 		return "", err

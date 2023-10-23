@@ -41,7 +41,7 @@ func NewKADPClient(domain, credential string) *KadpClient {
 }
 
 func (client *KadpClient) init() {
-	publicKey, privateKey := KeyGenerator()
+	publicKey, privateKey := KeyGenerator(2048)
 	keyPair["publicKey"] = publicKey
 	keyPair["privateKey"] = privateKey
 	base64PublicKey, err := ExtractBase64FromPEM(publicKey)
@@ -258,7 +258,7 @@ func (client *KadpClient) keyDecrypt(ciphertext string, key []byte) (string, err
 	return trimmedToken, nil
 }
 
-func (client *KadpClient) FpeEncipher(plaintext string, fpe algorithm.Fpe, radix, length int, label string) (string, error) {
+func (client *KadpClient) FpeEncipher(plaintext string, fpe algorithm.Fpe, tweak string, radix, length int, label string) (string, error) {
 
 	key, err := client.getKey(length, label)
 	logger.Debug("获取到key：", key)
@@ -269,9 +269,9 @@ func (client *KadpClient) FpeEncipher(plaintext string, fpe algorithm.Fpe, radix
 	var ciphertext string
 	switch fpe {
 	case algorithm.FF1:
-		ciphertext, err = ff1Encrypt(plaintext, key, radix)
+		ciphertext, err = ff1Encrypt(plaintext, key, tweak, radix)
 	case algorithm.FF3:
-		ciphertext, err = ff3Encrypt(plaintext, key, radix)
+		ciphertext, err = ff3Encrypt(plaintext, key, tweak, radix)
 	default:
 		fmt.Println("Invalid value")
 	}
@@ -282,7 +282,7 @@ func (client *KadpClient) FpeEncipher(plaintext string, fpe algorithm.Fpe, radix
 	return ciphertext, err
 }
 
-func (client *KadpClient) FpeDecipher(ciphertext string, fpe algorithm.Fpe, radix, length int, label string) (string, error) {
+func (client *KadpClient) FpeDecipher(ciphertext string, fpe algorithm.Fpe, tweak string, radix, length int, label string) (string, error) {
 	logger.Debug("正在解密")
 	key, err := client.getKey(length, label)
 	logger.Debug("获取到key", key)
@@ -292,9 +292,9 @@ func (client *KadpClient) FpeDecipher(ciphertext string, fpe algorithm.Fpe, radi
 	var plaintext string
 	switch fpe {
 	case algorithm.FF1:
-		plaintext, err = ff1Decrypt(ciphertext, key, radix)
+		plaintext, err = ff1Decrypt(ciphertext, key, tweak, radix)
 	case algorithm.FF3:
-		plaintext, err = ff3encrypt(ciphertext, key, radix)
+		plaintext, err = ff3Decrypt(ciphertext, key, tweak, radix)
 	default:
 		fmt.Println("Invalid value")
 	}
@@ -317,8 +317,8 @@ func (client *KadpClient) Encipher(plaintext []byte, design algorithm.Symmetry, 
 	switch design {
 	case algorithm.AES:
 		ciphertext, err = aesEncrypt(plaintext, []byte(key))
-	//case algorithm.FF3:
-	//	ciphertext, err = ff3Encrypt(plaintext, key, radix)
+	case algorithm.SM4:
+		ciphertext, err = sm4Encrypt(plaintext, []byte(key))
 	default:
 		fmt.Println("Invalid value")
 	}
@@ -341,8 +341,9 @@ func (client *KadpClient) Decipher(ciphertext string, design algorithm.Symmetry,
 	switch design {
 	case algorithm.AES:
 		plaintext, err = aseDecrypt(ciphertext, []byte(key))
-	//case algorithm.FF3:
-	//	ciphertext, err = ff3Encrypt(plaintext, key, radix)
+	case algorithm.SM4:
+
+		plaintext, err = sm4Decrypt(ciphertext, []byte(key))
 	default:
 		fmt.Println("Invalid value")
 	}

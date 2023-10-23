@@ -10,17 +10,9 @@ import (
 	"log"
 )
 
-type Rsa struct {
-}
-
-// NewRoleEndpoint ...
-func NewRoleEndpoint() *Rsa {
-	return &Rsa{}
-}
-
-func KeyGenerator() (publicKeyBase64, privateKeyBase64 string) {
+func KeyGenerator(length int) (publicKeyBase64, privateKeyBase64 string) {
 	// 生成RSA密钥对
-	privateKey, _ := rsa.GenerateKey(rand.Reader, 2048)
+	privateKey, _ := rsa.GenerateKey(rand.Reader, length)
 
 	// 将公钥编码为DER格式
 	publicKeyDER, _ := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
