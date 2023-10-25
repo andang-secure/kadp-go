@@ -43,7 +43,7 @@ func NewKADPClient(domain, credential string) *KadpClient {
 }
 
 func (client *KadpClient) init() {
-	publicKey, privateKey := KeyGenerator(2048)
+	publicKey, privateKey := keyGenerator()
 	keyPair["publicKey"] = publicKey
 	keyPair["privateKey"] = privateKey
 	base64PublicKey, err := ExtractBase64FromPEM(publicKey)
@@ -327,7 +327,9 @@ func (client *KadpClient) Encipher(plaintext []byte, design algorithm.Symmetry, 
 
 		}
 	case algorithm.SM4:
-		ciphertext, err = sm4Encrypt(plaintext, []byte(key))
+		ciphertext, err = sm4CbcEncrypt(plaintext, []byte(key))
+	case algorithm.DES:
+		ciphertext, err = tripleDesEncrypt(plaintext, []byte(key), []byte(iv))
 	default:
 		fmt.Println("Invalid value")
 	}
@@ -360,7 +362,9 @@ func (client *KadpClient) Decipher(ciphertext string, design algorithm.Symmetry,
 		}
 	case algorithm.SM4:
 
-		plaintext, err = sm4Decrypt(ciphertext, []byte(key))
+		plaintext, err = sm4CbcDecrypt(ciphertext, []byte(key))
+	case algorithm.DES:
+		ciphertext, err = tripleDesDecrypt(ciphertext, []byte(key), []byte(iv))
 	default:
 		fmt.Println("Invalid value")
 	}
@@ -369,4 +373,17 @@ func (client *KadpClient) Decipher(ciphertext string, design algorithm.Symmetry,
 	}
 
 	return plaintext, err
+}
+
+func (client *KadpClient) AsymmetricKeyPair(design algorithm.Asymmetric) (string, string) {
+	var publicKey string
+	var privateKey string
+
+	switch design {
+	case algorithm.RSA:
+		publicKey, privateKey = keyGenerator()
+	}
+
+	return publicKey, privateKey
+
 }

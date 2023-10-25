@@ -4,17 +4,19 @@ import (
 	"fmt"
 	"github.com/andang-security/kadp-go/algorithm"
 	"github.com/andang-security/kadp-go/encryption"
+	"github.com/andang-security/kadp-go/mode"
+	"github.com/andang-security/kadp-go/padding"
 	"log"
 	"testing"
 )
 
 func TestAdd(t *testing.T) {
 
-	url := "https://192.168.0.190:8090"
-	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEDpPYO1M/Hr6lfNuCmfL+Du6ijtN0EwQ4ph9Khbyk/RSj0uZTs4kQCe+Dg5Rq8zBS92LJmcxUNPJb/XKi36TIYSXjsQmmZtnkmyrC10i67uO59OF/Ea9t7AsoF78ytTjPagSJH4iI3zXYUzwhgtxwsybTlBCs1NjP3ht3VT2BvKo3HakFvinHnBseEwwTKT0HdfB0So1+6YPEikKis5ejs7Pyuh9rAIEiA0NmriDFtVvF9Hqq+wZn97ZE1n6ewCXAT0vqH8egm4KqDpxfdLME+4sy7nBU5bDG20HfYG7+7BsMb/c3+8Cq1TT8oynJbZCBg=="
+	url := "https://192.168.0.130:10060"
+	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEF4ujA8UNuXIMi2PdptjHdhEB0Qlz5G6AbCAexXDhKJyET8IuRNyWQ9OjVmI59OmRdKlzNANAcoqNShrUQIppTRNf9YpB7bjFeprmHH0IqwDZi26QnFD+nYCrztHIr1sloKDBle6a6bjl5V0pl3psUkq81XPBvPYRmePABplQqOQObQq0+Wa7ftBGQefsODWf5CgEsGRUoePltKLRtHWiTUdDdm7v0bJljuhhzjlLKHajQLUnxq3Wi5BaMp39JOg3j8Fji/UhXSbi+XtUKLWQiepYjqQa7e1LONYpgkhX7V34HirVvaoTsw+sRhcR1ol0g=="
 	myClient := encryption.NewKADPClient(url, token)
 
-	encrypt, err := myClient.FpeEncipher("1weqweq", algorithm.FF1, 36, 16, "kadp112")
+	encrypt, err := myClient.FpeEncipher("151918123", algorithm.FF3, "12345678", 36, 16, "kadp112", 2, 6)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -22,14 +24,16 @@ func TestAdd(t *testing.T) {
 
 	fmt.Println("密文" + encrypt)
 	asdas := "asd密文"
-	decipher, err := myClient.FpeDecipher(encrypt, algorithm.FF1, 32, 16, "kadp1123")
-	encipher, err := myClient.Encipher([]byte(asdas), algorithm.AES, 16, "kadp11211")
+	decipher, err := myClient.FpeDecipher(encrypt, algorithm.FF3, "12345678", 36, 16, "kadp112", 2, 6)
+	fmt.Println(decipher)
+
+	encipher, err := myClient.Encipher([]byte(asdas), algorithm.AES, mode.CBC, padding.NoPadding, 16, "kadp11211", "1234567897894561")
 	if err != nil {
 		return
 	}
 	fmt.Println("AES密文" + encipher)
 
-	plaintext, err := myClient.Decipher(encipher, algorithm.AES, 16, "kadp11211")
+	plaintext, err := myClient.Decipher(encipher, algorithm.AES, mode.CBC, padding.NoPadding, 16, "kadp11211", "1234567897894561")
 	fmt.Println(plaintext)
 
 	if err != nil {

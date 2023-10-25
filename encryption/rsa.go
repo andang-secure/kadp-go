@@ -10,12 +10,13 @@ import (
 	"log"
 )
 
-func KeyGenerator(length int) (publicKeyBase64, privateKeyBase64 string) {
+func keyGenerator() (publicKeyBase64, privateKeyBase64 string) {
 	// 生成RSA密钥对
-	privateKey, _ := rsa.GenerateKey(rand.Reader, length)
+	privateKey, _ := rsa.GenerateKey(rand.Reader, 2048)
 
 	// 将公钥编码为DER格式
 	publicKeyDER, _ := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
+
 	// 创建公钥的PEM块
 	publicKeyBlock := &pem.Block{
 		Type:  "PUBLIC KEY",
@@ -34,7 +35,7 @@ func KeyGenerator(length int) (publicKeyBase64, privateKeyBase64 string) {
 	// 将私钥PEM块编码为字符串
 	encodedPrivateKey := string(pem.EncodeToMemory(privateKeyBlock))
 
-	return encodedPublicKey, encodedPrivateKey
+	return encodedPublicKey, encodedPrivateKey, nil
 }
 
 func EncryptWithPublicKey(publicKey, plaintext string) (string, error) {

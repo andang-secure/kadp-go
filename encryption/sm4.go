@@ -5,7 +5,7 @@ import (
 	"github.com/tjfoc/gmsm/sm4"
 )
 
-func sm4Encrypt(plaintext []byte, key []byte) (string, error) {
+func sm4CbcEncrypt(plaintext, key []byte) (string, error) {
 	cipherText, err := sm4.Sm4Cbc(key, plaintext, true)
 
 	if err != nil {
@@ -16,7 +16,7 @@ func sm4Encrypt(plaintext []byte, key []byte) (string, error) {
 	return cipherTextBase64, nil
 }
 
-func sm4Decrypt(plaintext string, key []byte) (string, error) {
+func sm4CbcDecrypt(plaintext string, key []byte) (string, error) {
 
 	plaintextDecode, err := base64.StdEncoding.DecodeString(plaintext)
 	if err != nil {
