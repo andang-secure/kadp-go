@@ -35,7 +35,7 @@ func keyGenerator() (publicKeyBase64, privateKeyBase64 string) {
 	// 将私钥PEM块编码为字符串
 	encodedPrivateKey := string(pem.EncodeToMemory(privateKeyBlock))
 
-	return encodedPublicKey, encodedPrivateKey, nil
+	return encodedPublicKey, encodedPrivateKey
 }
 
 func EncryptWithPublicKey(publicKey, plaintext string) (string, error) {
