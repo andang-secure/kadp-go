@@ -43,7 +43,7 @@ func NewKADPClient(domain, credential string) *KadpClient {
 }
 
 func (client *KadpClient) init() {
-	publicKey, privateKey := keyGenerator()
+	publicKey, privateKey, _ := rsaKeyGenerator()
 	keyPair["publicKey"] = publicKey
 	keyPair["privateKey"] = privateKey
 	base64PublicKey, err := ExtractBase64FromPEM(publicKey)
@@ -126,7 +126,7 @@ func (client *KadpClient) getDekCipherText(label string, length int) {
 	data := resultMap["data"].(string)
 
 	privateKey := keyPair["privateKey"]
-	dekText, err := DecryptWithPrivateKey(privateKey, data)
+	dekText, err := rsaDecryptWithPrivateKey(privateKey, data)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -180,7 +180,7 @@ func (client *KadpClient) cipherTextDecrypt(label string) string {
 	}
 	dek := resultMap["data"].(string)
 	privateKey := keyPair["privateKey"]
-	dekKeyBase, err := DecryptWithPrivateKey(privateKey, dek)
+	dekKeyBase, err := rsaDecryptWithPrivateKey(privateKey, dek)
 	if err != nil {
 		logger.Error(err)
 	}
@@ -327,7 +327,9 @@ func (client *KadpClient) Encipher(plaintext []byte, design algorithm.Symmetry, 
 
 		}
 	case algorithm.SM4:
-		ciphertext, err = sm4CbcEncrypt(plaintext, []byte(key))
+		logger.Debug("开始进行SM4加密")
+		ciphertext, err = sm4CbcEncrypt(plaintext, key)
+
 	case algorithm.DES:
 		ciphertext, err = tripleDesEncrypt(plaintext, []byte(key), []byte(iv))
 	default:
@@ -362,7 +364,7 @@ func (client *KadpClient) Decipher(ciphertext string, design algorithm.Symmetry,
 		}
 	case algorithm.SM4:
 
-		plaintext, err = sm4CbcDecrypt(ciphertext, []byte(key))
+		plaintext, err = sm4CbcDecrypt(ciphertext, key)
 	case algorithm.DES:
 		ciphertext, err = tripleDesDecrypt(ciphertext, []byte(key), []byte(iv))
 	default:
@@ -375,15 +377,110 @@ func (client *KadpClient) Decipher(ciphertext string, design algorithm.Symmetry,
 	return plaintext, err
 }
 
-func (client *KadpClient) AsymmetricKeyPair(design algorithm.Asymmetric) (string, string) {
-	var publicKey string
-	var privateKey string
+func (client *KadpClient) AsymmetricKeyPair(design algorithm.Asymmetric) (publicKey string, privateKey string, err error) {
+	var pub string
+	var pri string
+	var errs error
 
 	switch design {
 	case algorithm.RSA:
-		publicKey, privateKey = keyGenerator()
+		pub, pri, errs = rsaKeyGenerator()
+		if err != nil {
+			return "", "", errs
+		}
+	case algorithm.SM2:
+		pub, pri, errs = sm2GenerateKey()
+		if err != nil {
+			return "", "", errs
+		}
 	}
 
-	return publicKey, privateKey
+	return pub, pri, nil
+}
 
+func (client *KadpClient) AsymmetricPubEncrypt(plaintext string, design algorithm.Asymmetric, publicKey string) (string, error) {
+
+	var ciphertext string
+	var err error
+	switch design {
+	case algorithm.RSA:
+		ciphertext, err = rsaEncryptWithPublicKey(publicKey, plaintext)
+		if err != nil {
+			return "", err
+		}
+	case algorithm.SM2:
+		ciphertext, err = sm2PubEncrypt(publicKey, plaintext)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return ciphertext, nil
+}
+
+func (client *KadpClient) AsymmetricPriDecrypt(ciphertext string, design algorithm.Asymmetric, privateKey string) (string, error) {
+
+	var plaintext string
+	var err error
+	switch design {
+	case algorithm.RSA:
+		plaintext, err = rsaDecryptWithPrivateKey(privateKey, ciphertext)
+		if err != nil {
+			return "", err
+		}
+	case algorithm.SM2:
+		plaintext, err = sm2PriDecrypt(privateKey, ciphertext)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return plaintext, nil
+}
+
+func (client *KadpClient) SM2Signature(plaintext, privateKey string, uid []byte) (r, s string, err error) {
+
+	r, s, errs := sm2Sign(privateKey, []byte(plaintext), uid)
+	if errs != nil {
+		return "", "", errs
+	}
+
+	return r, s, nil
+}
+
+func (client *KadpClient) SM2Verify(plaintext, publicKey, r, s string, uid []byte) (bool, error) {
+
+	VerifyBool, err := sm2Verify(publicKey, []byte(plaintext), uid, r, s)
+	if err != nil {
+		return VerifyBool, err
+	}
+
+	return VerifyBool, nil
+}
+
+func (client *KadpClient) RsaSignature(plaintext, privateKey string) (string, error) {
+
+	sign, err := rsaSign(privateKey, []byte(plaintext))
+	if err != nil {
+		return "", err
+	}
+
+	return sign, nil
+}
+
+func (client *KadpClient) RsaVerify(plaintext, SignatureText, publicKey string) (bool, error) {
+
+	VerifyBool, err := rsaVerify(publicKey, SignatureText, []byte(plaintext))
+	if err != nil {
+		return VerifyBool, err
+	}
+
+	return VerifyBool, nil
+}
+
+func (client *KadpClient) DigestEncrypt(plaintext string) string {
+
+	cipherText := sm3Encrypt([]byte(plaintext))
+
+	return cipherText
 }
