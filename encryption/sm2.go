@@ -57,6 +57,9 @@ func sm2PubEncrypt(pubKey string, plaintext string) (string, error) {
 	}
 
 	pub, err := x509.ParseSm2PublicKey(block.Bytes)
+	if err != nil {
+		return "", err
+	}
 
 	ciphertext, err := sm2.EncryptAsn1(pub, []byte(plaintext), rand.Reader)
 	if err != nil {
