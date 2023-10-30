@@ -15,9 +15,9 @@ func TestAdd(t *testing.T) {
 
 	url := "https://192.168.0.190:8090"
 	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEDpPYO1M/Hr6lfNuCmfL+Du6ijtN0EwQ4ph9Khbyk/RSj0uZTs4kQCe+Dg5Rq8zBS92LJmcxUNPJb/XKi36TIYSXjsQmmZtnkmyrC10i67uO59OF/Ea9t7AsoF78ytTjPagSJH4iI3zXYUzwhgtxwsybTlBCs1NjP3ht3VT2BvKo3HakFvinHnBseEwwTKT0HdfB0So1+6YPEikKis5ejs7Pyuh9rAIEiA0NmriDFtVvF9Hqq+wZn97ZE1n6ewCXAT0vqH8egm4KqDpxfdLME+4sy7nBU5bDG20HfYG7+7BsMb/c3+8Cq1TT8oynJbZCBg=="
-	myClient := encryption.NewKADPClient(url, token)
+	myClient, _ := encryption.NewKADPClient(url, token)
 
-	encrypt, err := myClient.FpeEncipher("151918123", algorithm.FF3, "12345678", 36, 16, "kadp112", 2, 6)
+	encrypt, err := myClient.FpeEncipher("132456498789", algorithm.FF3, "12345678", 10, 16, "kadp112", 2, 11)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -25,16 +25,16 @@ func TestAdd(t *testing.T) {
 
 	fmt.Println("密文" + encrypt)
 	asdas := "asd密文"
-	decipher, err := myClient.FpeDecipher(encrypt, algorithm.FF3, "12345678", 36, 16, "kadp112", 2, 6)
+	decipher, err := myClient.FpeDecipher(encrypt, algorithm.FF3, "12345678", 10, 16, "kadp112", 2, 11)
 	fmt.Println(decipher)
 
-	encipher, err := myClient.Encipher([]byte(asdas), algorithm.DES, mode.CBC, padding.NoPadding, 16, "awd1", "12345678")
+	encipher, err := myClient.Encipher([]byte(asdas), algorithm.AES, mode.CBC, padding.NoPadding, 16, "awd1", "1234567812345678")
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Println("AES密文" + encipher)
 
-	plaintext, err := myClient.Decipher(encipher, algorithm.DES, mode.CBC, padding.NoPadding, 16, "awd1", "12345678")
+	plaintext, err := myClient.Decipher(encipher, algorithm.AES, mode.CBC, padding.NoPadding, 16, "awd1", "1234567812345678")
 	fmt.Println(plaintext)
 
 	if err != nil {
@@ -43,20 +43,20 @@ func TestAdd(t *testing.T) {
 	fmt.Println("解密" + decipher)
 	log.Println(decipher)
 
-	pub, pri, err := myClient.AsymmetricKeyPair(algorithm.RSA)
+	pub, pri, err := myClient.AsymmetricKeyPair(algorithm.SM2)
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Println("公钥：", pub)
 	fmt.Println("私钥：", pri)
 
-	publicEncrypt, err := myClient.AsymmetricPubEncrypt("文档是我的", algorithm.RSA, pub)
+	publicEncrypt, err := myClient.AsymmetricPubEncrypt("文档是我的", algorithm.SM2, pub)
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Println("公钥加密过后密文：", publicEncrypt)
 
-	decrypt, err := myClient.AsymmetricPriDecrypt(publicEncrypt, algorithm.RSA, pri)
+	decrypt, err := myClient.AsymmetricPriDecrypt(publicEncrypt, algorithm.SM2, pri)
 	if err != nil {
 		fmt.Println(err)
 	}

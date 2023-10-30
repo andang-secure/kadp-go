@@ -11,7 +11,7 @@ import (
 )
 
 func SendRequest(method, url string, header map[string]string, params interface{}) (interface{}, error) {
-	fmt.Println("发送参数", params)
+	logger.Info("发送参数", params)
 	// 创建自定义的TLS配置，禁用证书验证
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
@@ -49,13 +49,13 @@ func SendRequest(method, url string, header map[string]string, params interface{
 	var result map[string]interface{}
 	err = json.NewDecoder(response.Body).Decode(&result)
 	if err != nil {
-		fmt.Println("Response decoding error:", err)
+		logger.Error("Response decoding error:", err)
 		return nil, err
 	}
 
 	logger.Info("获取请求：", result)
 	// 处理响应数据
-	fmt.Println("Response Data:", result)
+	logger.Debug("Response Data:", result)
 	return result, nil
 }
 
