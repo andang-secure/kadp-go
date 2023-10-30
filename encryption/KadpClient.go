@@ -29,6 +29,7 @@ var keyPair = make(map[string]string)
 var tokenMap = make(map[string]string)
 
 func NewKADPClient(domain, credential string) (*KadpClient, error) {
+	logger.DailyLogger("log", "Kadp-log.txt")
 
 	KADPClient := &KadpClient{
 		domain:          domain,
