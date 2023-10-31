@@ -28,13 +28,13 @@ func TestAdd(t *testing.T) {
 	decipher, err := myClient.FpeDecipher(encrypt, algorithm.FF3, "12345678", 10, 16, "kadp112", 2, 11)
 	fmt.Println(decipher)
 
-	encipher, err := myClient.Encipher([]byte(asdas), algorithm.AES, mode.CBC, padding.NoPadding, 16, "awd1", "1234567812345678")
+	encipher, err := myClient.Encipher([]byte(asdas), algorithm.DES, mode.CBC, padding.NoPadding, 16, "awd1", "12345678")
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Println("AES密文" + encipher)
 
-	plaintext, err := myClient.Decipher(encipher, algorithm.AES, mode.CBC, padding.NoPadding, 16, "awd1", "1234567812345678")
+	plaintext, err := myClient.Decipher(encipher, algorithm.DES, mode.CBC, padding.NoPadding, 16, "awd1", "12345678")
 	fmt.Println(plaintext)
 
 	if err != nil {

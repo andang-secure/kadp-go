@@ -382,7 +382,7 @@ func (client *KadpClient) Decipher(ciphertext string, design algorithm.Symmetry,
 
 		plaintext, err = sm4CbcDecrypt(ciphertext, key)
 	case algorithm.DES:
-		ciphertext, err = tripleDesDecrypt(ciphertext, []byte(key), []byte(iv))
+		plaintext, err = tripleDesDecrypt(ciphertext, []byte(key), []byte(iv))
 	default:
 		fmt.Println("Invalid value")
 	}
