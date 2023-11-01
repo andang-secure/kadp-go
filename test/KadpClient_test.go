@@ -28,20 +28,19 @@ func TestAdd(t *testing.T) {
 	decipher, err := myClient.FpeDecipher(encrypt, algorithm.FF3, "12345678", 10, 16, "kadp112", 2, 11)
 	fmt.Println(decipher)
 
-	encipher, err := myClient.Encipher([]byte(asdas), algorithm.DES, mode.CBC, padding.NoPadding, 16, "awd1", "12345678")
+	encipher, err := myClient.Encipher([]byte(asdas), algorithm.SM4, mode.CBC, padding.NoPadding, 16, "awd1", "12345678")
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Println("AES密文" + encipher)
 
-	plaintext, err := myClient.Decipher(encipher, algorithm.DES, mode.CBC, padding.NoPadding, 16, "awd1", "12345678")
-	fmt.Println(plaintext)
+	plaintext, err := myClient.Decipher(encipher, algorithm.SM4, mode.CBC, padding.NoPadding, 16, "awd1", "12345678")
 
 	if err != nil {
 		return
 	}
-	fmt.Println("解密" + decipher)
-	log.Println(decipher)
+	fmt.Println("解密" + plaintext)
+	log.Println(plaintext)
 
 	pub, pri, err := myClient.AsymmetricKeyPair(algorithm.SM2)
 	if err != nil {

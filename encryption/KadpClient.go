@@ -379,7 +379,6 @@ func (client *KadpClient) Decipher(ciphertext string, design algorithm.Symmetry,
 
 		}
 	case algorithm.SM4:
-
 		plaintext, err = sm4CbcDecrypt(ciphertext, key)
 	case algorithm.DES:
 		plaintext, err = tripleDesDecrypt(ciphertext, []byte(key), []byte(iv))
