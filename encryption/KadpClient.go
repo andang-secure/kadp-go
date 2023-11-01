@@ -29,7 +29,7 @@ var keyPair = make(map[string]string)
 var tokenMap = make(map[string]string)
 
 func NewKADPClient(domain, credential string) (*KadpClient, error) {
-	logger.DailyLogger("log", "Kadp-log.txt")
+	logger.DailyLogger("log", "../Kadp-log.txt")
 
 	KADPClient := &KadpClient{
 		domain:          domain,
@@ -276,7 +276,7 @@ func (client *KadpClient) keyDecrypt(ciphertext string, key []byte) (string, err
 	return trimmedToken, nil
 }
 
-func (client *KadpClient) FpeEncipher(plaintext string, fpe algorithm.Fpe, tweak string, radix, length int, label string, start, end int) (string, error) {
+func (client *KadpClient) FpeEncipher(plaintext string, fpe algorithm.Fpe, tweak, alphabet string, length int, label string, start, end int) (string, error) {
 
 	key, err := client.getKey(length, label)
 	logger.Debug("获取到key：", key)
@@ -287,9 +287,9 @@ func (client *KadpClient) FpeEncipher(plaintext string, fpe algorithm.Fpe, tweak
 	var ciphertext string
 	switch fpe {
 	case algorithm.FF1:
-		ciphertext, err = ff1Encrypt(plaintext, key, tweak, radix, start, end)
+		ciphertext, err = ff1Encrypt(plaintext, key, tweak, len([]rune(alphabet)), start, end, alphabet)
 	case algorithm.FF3:
-		ciphertext, err = ff3Encrypt(plaintext, key, tweak, radix, start, end)
+		ciphertext, err = ff3Encrypt(plaintext, key, tweak, len([]rune(alphabet)), start, end, alphabet)
 	default:
 		fmt.Println("Invalid value")
 	}
@@ -300,7 +300,7 @@ func (client *KadpClient) FpeEncipher(plaintext string, fpe algorithm.Fpe, tweak
 	return ciphertext, err
 }
 
-func (client *KadpClient) FpeDecipher(ciphertext string, fpe algorithm.Fpe, tweak string, radix, length int, label string, start, end int) (string, error) {
+func (client *KadpClient) FpeDecipher(ciphertext string, fpe algorithm.Fpe, tweak, alphabet string, length int, label string, start, end int) (string, error) {
 	logger.Debug("正在解密")
 	key, err := client.getKey(length, label)
 	logger.Debug("获取到key", key)
@@ -310,9 +310,9 @@ func (client *KadpClient) FpeDecipher(ciphertext string, fpe algorithm.Fpe, twea
 	var plaintext string
 	switch fpe {
 	case algorithm.FF1:
-		plaintext, err = ff1Decrypt(ciphertext, key, tweak, radix, start, end)
+		plaintext, err = ff1Decrypt(ciphertext, key, tweak, len([]rune(alphabet)), start, end, alphabet)
 	case algorithm.FF3:
-		plaintext, err = ff3Decrypt(ciphertext, key, tweak, radix, start, end)
+		plaintext, err = ff3Decrypt(ciphertext, key, tweak, len([]rune(alphabet)), start, end, alphabet)
 	default:
 		fmt.Println("Invalid value")
 	}
