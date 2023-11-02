@@ -28,8 +28,8 @@ var keyPair = make(map[string]string)
 
 var tokenMap = make(map[string]string)
 
-func NewKADPClient(domain, credential, logFileDir, logFileName string) (*KadpClient, error) {
-	logger.DailyLogger(logFileDir, logFileName)
+func NewKADPClient(domain, credential string) (*KadpClient, error) {
+	//logger.DailyLogger(logFileDir, logFileName)
 
 	KADPClient := &KadpClient{
 		domain:          domain,
