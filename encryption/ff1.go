@@ -16,9 +16,7 @@ func ff1Encrypt(plaintext, key, tweak string, radix, start, end int, alphabet ..
 		fmt.Println("Failed to create FF1 encrypter:", err)
 		return "", err
 	}
-	fmt.Println("开始加密:-----")
 
-	//
 	var middle string
 	var before string
 	var after string
@@ -124,12 +122,6 @@ func ff1Decrypt(ciphertext, key, tweak string, radix, start, end int, alphabet .
 	} else {
 		middle = ciphertext
 	}
-
-	fmt.Println("头", before)
-	fmt.Println("中", middle)
-
-	fmt.Println("尾部", after)
-
 	// 解密字符串
 	decryptedText, err := ff1.Decrypt(middle, nil)
 	if err != nil {

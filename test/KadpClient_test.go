@@ -17,7 +17,7 @@ func TestAdd(t *testing.T) {
 	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEDpPYO1M/Hr6lfNuCmfL+Du6ijtN0EwQ4ph9Khbyk/RSj0uZTs4kQCe+Dg5Rq8zBS92LJmcxUNPJb/XKi36TIYSXjsQmmZtnkmyrC10i67uO59OF/Ea9t7AsoF78ytTjPagSJH4iI3zXYUzwhgtxwsybTlBCs1NjP3ht3VT2BvKo3HakFvinHnBseEwwTKT0HdfB0So1+6YPEikKis5ejs7Pyuh9rAIEiA0NmriDFtVvF9Hqq+wZn97ZE1n6ewCXAT0vqH8egm4KqDpxfdLME+4sy7nBU5bDG20HfYG7+7BsMb/c3+8Cq1TT8oynJbZCBg=="
 	myClient, _ := encryption.NewKADPClient(url, token)
 
-	encrypt, err := myClient.FpeEncipher("1324abcd5648789国旗下的光辉", algorithm.FF3, "1234567", "你木纹0123456789abcd国旗下的光辉", 16, "kadp112", 2, 11)
+	encrypt, err := myClient.FpeEncipher("1324abcd5648789国旗下的光辉asd·oaklamaz", algorithm.FF1, "1234567", "你木纹0123456789abcd国旗下的光辉", 16, "kadp112", 2, 18)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -25,7 +25,7 @@ func TestAdd(t *testing.T) {
 
 	fmt.Println("FPE密文" + encrypt)
 	asdas := "asd密文"
-	decipher, err := myClient.FpeDecipher(encrypt, algorithm.FF3, "1234567", "你木纹0123456789abcd国旗下的光辉", 16, "kadp112", 2, 11)
+	decipher, err := myClient.FpeDecipher(encrypt, algorithm.FF1, "1234567", "你木纹0123456789abcd国旗下的光辉", 16, "kadp112", 2, 18)
 	fmt.Println("FPE明文：" + decipher)
 
 	encipher, err := myClient.Encipher([]byte(asdas), algorithm.SM4, mode.CBC, padding.NoPadding, 16, "awd1", "12345678")
