@@ -12,9 +12,8 @@ import (
 	"github.com/andang-security/kadp-go/padding"
 	"github.com/andang-security/kadp-go/utils"
 	"github.com/go-irain/logger"
-	"github.com/zalando/go-keyring"
+	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	"regexp"
-	"runtime"
 )
 
 type KadpClient struct {
@@ -22,19 +21,23 @@ type KadpClient struct {
 	credential      string
 	version         string
 	labelCipherText map[string]string
+	keyMap          map[string]string
+	keyStore        keystore.KeyStore
 }
 
 var keyPair = make(map[string]string)
 
 var tokenMap = make(map[string]string)
 
-func NewKADPClient(domain, credential string) (*KadpClient, error) {
+func NewKADPClient(domain, credential, keyStoreFileName, keyStorePassWord string) (*KadpClient, error) {
 	//logger.DailyLogger(logFileDir, logFileName)
 
 	KADPClient := &KadpClient{
 		domain:          domain,
 		credential:      credential,
 		labelCipherText: make(map[string]string),
+		keyMap:          make(map[string]string),
+		keyStore:        utils.ReadKeyStore(keyStoreFileName, []byte(keyStorePassWord)),
 	}
 	err := KADPClient.init()
 	if err != nil {
@@ -50,7 +53,8 @@ func (client *KadpClient) init() error {
 	keyPair["privateKey"] = privateKey
 	base64PublicKey, err := ExtractBase64FromPEM(publicKey)
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
+		return err
 	}
 
 	mac := utils.GetMac()
@@ -58,8 +62,7 @@ func (client *KadpClient) init() error {
 	system, err := utils.GetOsInfo()
 	if err != nil {
 		logger.Error("获取系统失败")
-		fmt.Errorf("获取系统失败")
-		return err
+		return fmt.Errorf("获取系统失败: %v", err)
 	}
 	ip, _ := utils.GetOutBoundIP()
 
@@ -83,19 +86,18 @@ func (client *KadpClient) init() error {
 
 	result, err := utils.SendRequest("POST", client.domain+"/v1/ksp/open_api/auth", credentialMap, reqMap)
 
-	var resultMap map[string]interface{}
-	if result == nil {
-		logger.Error("认证连接失败，请检查地址")
-		return err
-	}
-
-	resultMap = result.(map[string]interface{})
-	tokenMap["token"] = resultMap["data"].(string)
-
 	if err != nil {
 		logger.Error("Failed to send request:", err)
 		return err
 	}
+
+	resultMap, ok := result.(map[string]interface{})
+	if !ok {
+		logger.Error("认证连接失败，请检查地址")
+		return fmt.Errorf("认证连接失败")
+	}
+
+	tokenMap["token"] = resultMap["data"].(string)
 
 	return nil
 
@@ -109,9 +111,12 @@ func (client *KadpClient) getDekCipherText(label string, length int) error {
 	}
 
 	result, err := utils.SendRequest("POST", client.domain+"/v1/ksp/open_api/dek_text", tokenMap, reqMap)
+	if err != nil {
+		logger.Error("Failed to send request:", err)
+		return errors.New("failed to send request")
+	}
 
-	var resultMap map[string]interface{}
-	resultMap = result.(map[string]interface{})
+	resultMap := result.(map[string]interface{})
 	code := resultMap["code"].(float64)
 
 	if code == 4604 {
@@ -133,9 +138,8 @@ func (client *KadpClient) getDekCipherText(label string, length int) error {
 	dekText, err := rsaDecryptWithPrivateKey(privateKey, data)
 
 	if err != nil {
-
-		logger.Error("Failed to send request:", err)
-		return errors.New("failed to send request")
+		logger.Error("failed to decrypt:", err)
+		return errors.New("failed to decrypt")
 	}
 
 	var TextJson map[string]string
@@ -152,7 +156,7 @@ func (client *KadpClient) getDekCipherText(label string, length int) error {
 	client.version = versionValue
 	_, err = client.cipherTextDecrypt(label)
 
-	return nil
+	return err
 
 }
 
@@ -171,8 +175,8 @@ func (client *KadpClient) cipherTextDecrypt(label string) (string, error) {
 		logger.Error("请求dek解密失败", err)
 		return "", err
 	}
-	var resultMap map[string]interface{}
-	resultMap = result.(map[string]interface{})
+
+	resultMap := result.(map[string]interface{})
 	code := resultMap["code"].(float64)
 	if code == 4604 {
 		err := client.init()
@@ -194,15 +198,12 @@ func (client *KadpClient) cipherTextDecrypt(label string) (string, error) {
 		return "", err
 	}
 
-	goos := runtime.GOOS
-	if goos == "linux" {
-		keyring.MockInit()
-	}
-	err = keyring.Set("kadp", label, dekKeyBase)
+	keyEntry := utils.CreateKeyEntry([]byte(dekKeyBase))
+	err = client.keyStore.SetPrivateKeyEntry(label, keyEntry, []byte("shanghaiandanggongsi"))
 	if err != nil {
 		return "", err
 	}
-
+	client.keyMap[label] = dekKeyBase
 	return dekKeyBase, nil
 
 }
@@ -213,11 +214,18 @@ func (client *KadpClient) getKey(length int, label string) (string, error) {
 		return "", errors.New("length parameter error, can only be 16-24-32")
 	}
 
-	key, err := keyring.Get("kadp", label)
-	if err != nil {
-		logger.Error(err)
+	if label == "" {
+		return "", errors.New("label parameter cannot be empty")
 	}
-	logger.Debug("getKey," + key)
+
+	if key, ok := client.keyMap[label]; ok {
+		return key, nil
+	}
+
+	keyEntry, _ := client.keyStore.GetPrivateKeyEntry(label, []byte("shanghaiandanggongsi"))
+	key := string(keyEntry.PrivateKey)
+
+	logger.Debug("getKey,", key)
 
 	if key == "" {
 		logger.Debug("正在获取key")
@@ -227,17 +235,16 @@ func (client *KadpClient) getKey(length int, label string) (string, error) {
 				return "", err
 			}
 		} else {
-			_, err := client.cipherTextDecrypt(label)
+			key, err := client.cipherTextDecrypt(label)
 			if err != nil {
 				return "", err
 			}
-		}
-		key, err = keyring.Get("kadp", label)
-		if err != nil {
-			return "", err
+			return key, nil
 		}
 	}
 
+	key = client.keyMap[label]
+	fmt.Println("key为", key)
 	return key, nil
 }
 
