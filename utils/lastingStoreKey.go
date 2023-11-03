@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"github.com/go-irain/logger"
 	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	"log"
 	"os"
@@ -14,8 +15,8 @@ func ReadKeyStore(filename string, password []byte) keystore.KeyStore {
 
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		// 文件不存在，则创建新的 KeyStore 并保存到文件
-		WriteKeyStore(ks, filename, password)
-		fmt.Println("创建keystore文件")
+		CreateKeyStore(ks, filename, password)
+		logger.Debug("keystore判定不存在,开始创建keystore文件")
 	}
 
 	f, err := os.Open(filename)
@@ -30,7 +31,7 @@ func ReadKeyStore(filename string, password []byte) keystore.KeyStore {
 	return ks
 }
 
-func WriteKeyStore(ks keystore.KeyStore, filename string, password []byte) {
+func CreateKeyStore(ks keystore.KeyStore, filename string, password []byte) {
 	f, err := os.Create(filename)
 	if err != nil {
 		log.Fatal(err)
