@@ -14,7 +14,6 @@ func ReadKeyStore(filename string, password []byte) keystore.KeyStore {
 
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		// 文件不存在，则创建新的 KeyStore 并保存到文件
-		ks := keystore.New()
 		WriteKeyStore(ks, filename, password)
 		fmt.Println("创建keystore文件")
 	}
