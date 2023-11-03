@@ -10,7 +10,7 @@ func ff3Encrypt(plaintext, key, tweak string, radix, start, end int, alphabet ..
 
 	ff3, err := ubiq.NewFF3_1([]byte(key), []byte(tweak), radix, alphabet...)
 	if err != nil {
-		fmt.Println("Failed to create FF1 encrypter:", err)
+		fmt.Println("Failed to create FF3 encrypter:", err)
 		return "", err
 	}
 	var middle string
@@ -95,7 +95,7 @@ func ff3Decrypt(ciphertext, key, tweak string, radix, start, end int, alphabet .
 	// 创建 FF1 解密器
 	ff3, err := ubiq.NewFF3_1([]byte(key), []byte(tweak), radix, alphabet...)
 	if err != nil {
-		log.Println("Failed to create FF1 decrypter:", err)
+		log.Println("Failed to create FF3 decrypter:", err)
 		return "", err
 	}
 	var middle string

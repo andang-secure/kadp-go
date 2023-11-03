@@ -15,10 +15,13 @@ func TestAdd(t *testing.T) {
 
 	url := "https://192.168.0.190:8090"
 	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEDpPYO1M/Hr6lfNuCmfL+Du6ijtN0EwQ4ph9Khbyk/RSj0uZTs4kQCe+Dg5Rq8zBS92LJmcxUNPJb/XKi36TIYSXjsQmmZtnkmyrC10i67uO59OF/Ea9t7AsoF78ytTjPagSJH4iI3zXYUzwhgtxwsybTlBCs1NjP3ht3VT2BvKo3HakFvinHnBseEwwTKT0HdfB0So1+6YPEikKis5ejs7Pyuh9rAIEiA0NmriDFtVvF9Hqq+wZn97ZE1n6ewCXAT0vqH8egm4KqDpxfdLME+4sy7nBU5bDG20HfYG7+7BsMb/c3+8Cq1TT8oynJbZCBg=="
-	myClient, _ := encryption.NewKADPClient(url, token, "keystore.jks", "123456")
+	myClient, err := encryption.NewKADPClient(url, token, "keystore.jks", "123456")
 
+	if err != nil {
+		fmt.Println(err)
+	}
 	str := "15191812322"
-	encrypt, err := myClient.FpeEncipher(str, algorithm.FF1, "1234567", "0123456789", 16, "kadp112", 2, 7)
+	encrypt, err := myClient.FpeEncipher(str, algorithm.FF1, "1234567", "0123456789", 16, "kadp1121", 2, 7)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -26,16 +29,16 @@ func TestAdd(t *testing.T) {
 
 	fmt.Println("FPE密文" + encrypt)
 	asdas := "asd密文"
-	decipher, err := myClient.FpeDecipher(encrypt, algorithm.FF1, "1234567", "0123456789", 16, "kadp112", 2, 7)
+	decipher, err := myClient.FpeDecipher(encrypt, algorithm.FF1, "1234567", "0123456789", 16, "kadp1121", 2, 7)
 	fmt.Println("FPE明文：" + decipher)
 
-	encipher, err := myClient.Encipher([]byte(asdas), algorithm.SM4, mode.CBC, padding.NoPadding, 16, "awd1", "12345678")
+	encipher, err := myClient.Encipher([]byte(asdas), algorithm.SM4, mode.CBC, padding.NoPadding, 16, "awd12", "12345678")
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Println("AES密文" + encipher)
 
-	plaintext, err := myClient.Decipher(encipher, algorithm.SM4, mode.CBC, padding.NoPadding, 16, "awd1", "12345678")
+	plaintext, err := myClient.Decipher(encipher, algorithm.SM4, mode.CBC, padding.NoPadding, 16, "awd12", "12345678")
 
 	if err != nil {
 		return

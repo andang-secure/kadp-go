@@ -128,24 +128,33 @@ func extractMacOSVersion(output string) string {
 	return ""
 }
 
-func GetMac() string {
+func GetMac() (string, error) {
 
 	goos := runtime.GOOS
 	var osInfo string
+	var err error
 
-	logger.Debug("获取到系统：", goos)
 	if goos == "linux" {
 		logger.Debug("获取到系统：", goos)
-		osInfo, _ = getLinuxMac()
+		osInfo, err = getLinuxMac()
+		if err != nil {
+			return "", err
+		}
 
 	} else if goos == "windows" {
-		osInfo, _ = getWindowsMac()
+		osInfo, err = getWindowsMac()
+		if err != nil {
+			return "", err
+		}
 
 	} else if goos == "darwin" {
 		osInfo, _ = getMACMac()
+		if err != nil {
+			return "", err
+		}
 		// 获取 macOS 系统的详细信息的方法
 	}
-	return osInfo
+	return osInfo, nil
 
 }
 

@@ -11,7 +11,6 @@ import (
 )
 
 func SendRequest(method, url string, header map[string]string, params interface{}) (interface{}, error) {
-	logger.Info("发送参数", params)
 	// 创建自定义的TLS配置，禁用证书验证
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
