@@ -384,9 +384,6 @@ func (client *KadpClient) Encipher(plaintext []byte, design algorithm.Symmetry, 
 	}
 	key := client.keyMap[label]
 	logger.Debug("获取到key：", key)
-	if err != nil {
-		return "", err
-	}
 
 	var ciphertext string
 	switch design {
@@ -426,9 +423,6 @@ func (client *KadpClient) Decipher(ciphertext string, design algorithm.Symmetry,
 	}
 	key := client.keyMap[label]
 	logger.Debug("获取到key：", key)
-	if err != nil {
-		return "", err
-	}
 
 	var plaintext string
 	switch design {
@@ -560,4 +554,45 @@ func (client *KadpClient) RsaVerify(plaintext, SignatureText, publicKey string) 
 func (client *KadpClient) DigestEncrypt(plaintext string) string {
 	cipherText := sm3Encrypt([]byte(plaintext))
 	return cipherText
+}
+
+func (client *KadpClient) Hmac(message []byte, label string, length int) (string, error) {
+	logger.Debug("mac签名")
+	var err error
+
+	if client.keyMap[label] == "" {
+		err = client.getKey(length, label)
+		if err != nil {
+			return "", err
+		}
+	}
+	key := client.keyMap[label]
+
+	logger.Debug("获取到key", key)
+
+	cipherText := generateHMAC([]byte(key), message)
+
+	return cipherText, nil
+}
+func (client *KadpClient) HmacVerify(message []byte, hmacVal, label string, length int) (bool, error) {
+	logger.Debug("mac签名")
+	var err error
+
+	if client.keyMap[label] == "" {
+		err = client.getKey(length, label)
+		if err != nil {
+			return false, err
+		}
+	}
+	key := client.keyMap[label]
+
+	logger.Debug("获取到key", key)
+	logger.Debug("获取到hmac", hmacVal)
+
+	valid, err := verifyIntegrity([]byte(key), message, hmacVal)
+	if err != nil {
+		return false, err
+	}
+
+	return valid, nil
 }
