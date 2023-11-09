@@ -18,7 +18,8 @@
 ## 接口文档
   地址：https://kmc0822.coding.net/p/kadp/wiki/78#user-content-%E6%96%87%E6%A1%A3%E7%9B%AE%E5%BD%95
   
-## 使用示例，更多请查看test/KadpClient_test.go文件
+## 使用示例
+更多请查看test/KadpClient_test.go文件
   ```
 //url:安当KSP地址，
 //token：安当KSP令牌
