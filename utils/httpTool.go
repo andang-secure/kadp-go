@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/go-irain/logger"
+	logger "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 )

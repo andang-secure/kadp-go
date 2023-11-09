@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/go-irain/logger"
+	logger "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net"
 	"os/exec"

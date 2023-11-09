@@ -1,11 +1,11 @@
-package encryption
+package kadp
 
 import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
-	"github.com/go-irain/logger"
+	logger "github.com/sirupsen/logrus"
 )
 
 func generateHMAC(key []byte, message []byte) string {

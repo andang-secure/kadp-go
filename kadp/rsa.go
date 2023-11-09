@@ -1,4 +1,4 @@
-package encryption
+package kadp
 
 import (
 	"crypto"
@@ -9,7 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
-	"github.com/go-irain/logger"
+	logger "github.com/sirupsen/logrus"
 	"log"
 )
 

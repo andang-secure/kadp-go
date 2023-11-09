@@ -1,4 +1,4 @@
-package mode
+package kadp
 
 type Mode string
 

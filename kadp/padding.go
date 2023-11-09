@@ -1,4 +1,4 @@
-package padding
+package kadp
 
 type Padding string
 

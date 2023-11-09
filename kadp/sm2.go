@@ -1,9 +1,9 @@
-package encryption
+package kadp
 
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/go-irain/logger"
+	logger "github.com/sirupsen/logrus"
 	"github.com/tjfoc/gmsm/x509"
 	"log"
 	"math/big"

@@ -1,4 +1,4 @@
-package encryption
+package kadp
 
 import (
 	"bytes"
@@ -23,7 +23,7 @@ func tripleDesDecrypt(crypted string, key, iv []byte) (string, error) {
 	blockMode := cipher.NewCBCDecrypter(block, iv)
 	origData := make([]byte, len(ciphertextDecode))
 	blockMode.CryptBlocks(origData, ciphertextDecode)
-	origData = PKCS5UnPadding(origData)
+	origData = pKCS5UnPadding(origData)
 	return string(origData), nil
 }
 
@@ -33,7 +33,7 @@ func tripleDesEncrypt(origData, key, iv []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	origData = PKCS5Padding(origData, block.BlockSize())
+	origData = pKCS5Padding(origData, block.BlockSize())
 	blockMode := cipher.NewCBCEncrypter(block, iv)
 
 	ciphertext := make([]byte, len(origData))
@@ -44,13 +44,13 @@ func tripleDesEncrypt(origData, key, iv []byte) (string, error) {
 	return cipherTextBase64, nil
 }
 
-func PKCS5Padding(ciphertext []byte, blockSize int) []byte {
+func pKCS5Padding(ciphertext []byte, blockSize int) []byte {
 	padding := blockSize - len(ciphertext)%blockSize
 	padText := bytes.Repeat([]byte{byte(padding)}, padding)
 	return append(ciphertext, padText...)
 }
 
-func PKCS5UnPadding(origData []byte) []byte {
+func pKCS5UnPadding(origData []byte) []byte {
 	length := len(origData)
 	unPadding := int(origData[length-1])
 	return origData[:length-unPadding]

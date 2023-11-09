@@ -2,8 +2,8 @@ package utils
 
 import (
 	"fmt"
-	"github.com/go-irain/logger"
 	"github.com/pavlo-v-chernykh/keystore-go/v4"
+	logger "github.com/sirupsen/logrus"
 	"log"
 	"os"
 	"time"

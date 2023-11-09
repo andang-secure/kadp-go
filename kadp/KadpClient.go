@@ -1,4 +1,4 @@
-package encryption
+package kadp
 
 import (
 	"crypto/aes"
@@ -7,12 +7,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/andang-security/kadp-go/algorithm"
-	"github.com/andang-security/kadp-go/mode"
-	"github.com/andang-security/kadp-go/padding"
 	"github.com/andang-security/kadp-go/utils"
-	"github.com/go-irain/logger"
 	"github.com/pavlo-v-chernykh/keystore-go/v4"
+	logger "github.com/sirupsen/logrus"
 	"regexp"
 )
 
@@ -314,7 +311,7 @@ func (client *KadpClient) keyDecrypt(ciphertext string, key []byte) (string, err
 	return trimmedToken, nil
 }
 
-func (client *KadpClient) FpeEncipher(plaintext string, fpe algorithm.Fpe, tweak, alphabet string, length int, label string, start, end int) (string, error) {
+func (client *KadpClient) FpeEncipher(plaintext string, fpe Fpe, tweak, alphabet string, length int, label string, start, end int) (string, error) {
 
 	var err error
 	if client.keyMap[label] == "" {
@@ -329,9 +326,9 @@ func (client *KadpClient) FpeEncipher(plaintext string, fpe algorithm.Fpe, tweak
 
 	var ciphertext string
 	switch fpe {
-	case algorithm.FF1:
+	case FF1:
 		ciphertext, err = ff1Encrypt(plaintext, key, tweak, len([]rune(alphabet)), start, end, alphabet)
-	case algorithm.FF3:
+	case FF3:
 		ciphertext, err = ff3Encrypt(plaintext, key, tweak, len([]rune(alphabet)), start, end, alphabet)
 	default:
 		fmt.Println("Invalid value")
@@ -343,7 +340,7 @@ func (client *KadpClient) FpeEncipher(plaintext string, fpe algorithm.Fpe, tweak
 	return ciphertext, err
 }
 
-func (client *KadpClient) FpeDecipher(ciphertext string, fpe algorithm.Fpe, tweak, alphabet string, length int, label string, start, end int) (string, error) {
+func (client *KadpClient) FpeDecipher(ciphertext string, fpe Fpe, tweak, alphabet string, length int, label string, start, end int) (string, error) {
 	logger.Debug("正在解密")
 	var err error
 
@@ -359,9 +356,9 @@ func (client *KadpClient) FpeDecipher(ciphertext string, fpe algorithm.Fpe, twea
 
 	var plaintext string
 	switch fpe {
-	case algorithm.FF1:
+	case FF1:
 		plaintext, err = ff1Decrypt(ciphertext, key, tweak, len([]rune(alphabet)), start, end, alphabet)
-	case algorithm.FF3:
+	case FF3:
 		plaintext, err = ff3Decrypt(ciphertext, key, tweak, len([]rune(alphabet)), start, end, alphabet)
 	default:
 		fmt.Println("Invalid value")
@@ -373,7 +370,7 @@ func (client *KadpClient) FpeDecipher(ciphertext string, fpe algorithm.Fpe, twea
 	return plaintext, err
 }
 
-func (client *KadpClient) Encipher(plaintext []byte, design algorithm.Symmetry, modeVal mode.Mode, paddingVal padding.Padding, length int, label, iv string) (string, error) {
+func (client *KadpClient) Encipher(plaintext []byte, design Symmetry, modeVal Mode, paddingVal Padding, length int, label, iv string) (string, error) {
 	var err error
 
 	if client.keyMap[label] == "" {
@@ -387,20 +384,20 @@ func (client *KadpClient) Encipher(plaintext []byte, design algorithm.Symmetry, 
 
 	var ciphertext string
 	switch design {
-	case algorithm.AES:
-		if modeVal == mode.CBC {
-			if paddingVal == padding.PKCS5Padding {
+	case AES:
+		if modeVal == CBC {
+			if paddingVal == PKCS5Padding {
 				ciphertext, err = aseCbcPKCS5Encrypt(plaintext, []byte(key), []byte(iv))
 			} else {
 				ciphertext, err = aseCbcNoPadEncrypt(plaintext, []byte(key), []byte(iv))
 			}
 
 		}
-	case algorithm.SM4:
+	case SM4:
 		logger.Debug("开始进行SM4加密")
 		ciphertext, err = sm4CbcEncrypt(plaintext, key)
 
-	case algorithm.DES:
+	case DES:
 		ciphertext, err = tripleDesEncrypt(plaintext, []byte(key), []byte(iv))
 	default:
 		fmt.Println("Invalid value")
@@ -412,7 +409,7 @@ func (client *KadpClient) Encipher(plaintext []byte, design algorithm.Symmetry, 
 	return ciphertext, err
 }
 
-func (client *KadpClient) Decipher(ciphertext string, design algorithm.Symmetry, modeVal mode.Mode, paddingVal padding.Padding, length int, label, iv string) (string, error) {
+func (client *KadpClient) Decipher(ciphertext string, design Symmetry, modeVal Mode, paddingVal Padding, length int, label, iv string) (string, error) {
 	var err error
 
 	if client.keyMap[label] == "" {
@@ -426,19 +423,19 @@ func (client *KadpClient) Decipher(ciphertext string, design algorithm.Symmetry,
 
 	var plaintext string
 	switch design {
-	case algorithm.AES:
+	case AES:
 
-		if modeVal == mode.CBC {
-			if paddingVal == padding.PKCS5Padding {
+		if modeVal == CBC {
+			if paddingVal == PKCS5Padding {
 				plaintext, err = aseCbcPKCS5Decrypt(ciphertext, []byte(key), []byte(iv))
 			} else {
 				plaintext, err = aseCbcNoPadDecrypt(ciphertext, []byte(key), []byte(iv))
 			}
 
 		}
-	case algorithm.SM4:
+	case SM4:
 		plaintext, err = sm4CbcDecrypt(ciphertext, key)
-	case algorithm.DES:
+	case DES:
 		plaintext, err = tripleDesDecrypt(ciphertext, []byte(key), []byte(iv))
 	default:
 		fmt.Println("Invalid value")
@@ -450,18 +447,18 @@ func (client *KadpClient) Decipher(ciphertext string, design algorithm.Symmetry,
 	return plaintext, err
 }
 
-func (client *KadpClient) AsymmetricKeyPair(design algorithm.Asymmetric) (publicKey string, privateKey string, err error) {
+func (client *KadpClient) AsymmetricKeyPair(design Asymmetric) (publicKey string, privateKey string, err error) {
 	var pub string
 	var pri string
 	var errs error
 
 	switch design {
-	case algorithm.RSA:
+	case RSA:
 		pub, pri, errs = rsaKeyGenerator()
 		if err != nil {
 			return "", "", errs
 		}
-	case algorithm.SM2:
+	case SM2:
 		pub, pri, errs = sm2GenerateKey()
 		if err != nil {
 			return "", "", errs
@@ -471,17 +468,17 @@ func (client *KadpClient) AsymmetricKeyPair(design algorithm.Asymmetric) (public
 	return pub, pri, nil
 }
 
-func (client *KadpClient) AsymmetricPubEncrypt(plaintext string, design algorithm.Asymmetric, publicKey string) (string, error) {
+func (client *KadpClient) AsymmetricPubEncrypt(plaintext string, design Asymmetric, publicKey string) (string, error) {
 
 	var ciphertext string
 	var err error
 	switch design {
-	case algorithm.RSA:
+	case RSA:
 		ciphertext, err = rsaEncryptWithPublicKey(publicKey, plaintext)
 		if err != nil {
 			return "", err
 		}
-	case algorithm.SM2:
+	case SM2:
 		ciphertext, err = sm2PubEncrypt(publicKey, plaintext)
 		if err != nil {
 			return "", err
@@ -491,17 +488,17 @@ func (client *KadpClient) AsymmetricPubEncrypt(plaintext string, design algorith
 	return ciphertext, nil
 }
 
-func (client *KadpClient) AsymmetricPriDecrypt(ciphertext string, design algorithm.Asymmetric, privateKey string) (string, error) {
+func (client *KadpClient) AsymmetricPriDecrypt(ciphertext string, design Asymmetric, privateKey string) (string, error) {
 
 	var plaintext string
 	var err error
 	switch design {
-	case algorithm.RSA:
+	case RSA:
 		plaintext, err = rsaDecryptWithPrivateKey(privateKey, ciphertext)
 		if err != nil {
 			return "", err
 		}
-	case algorithm.SM2:
+	case SM2:
 		plaintext, err = sm2PriDecrypt(privateKey, ciphertext)
 		if err != nil {
 			return "", err
@@ -595,4 +592,19 @@ func (client *KadpClient) HmacVerify(message []byte, hmacVal, label string, leng
 	}
 
 	return valid, nil
+}
+
+func (client *KadpClient) SHASum(message []byte, shaHash Hash) string {
+
+	var cipherText string
+	switch shaHash {
+	case Sha1:
+		cipherText = sha1Sum(message)
+
+	case Sha256:
+		cipherText = sha256Sum(message)
+
+	}
+
+	return cipherText
 }
