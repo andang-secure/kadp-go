@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/andang-security/kadp-go/utils"
+	"github.com/andang-secure/kadp-go/utils"
 	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	logger "github.com/sirupsen/logrus"
 	"regexp"

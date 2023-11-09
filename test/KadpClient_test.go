@@ -2,7 +2,7 @@ package test
 
 import (
 	"fmt"
-	"github.com/andang-security/kadp-go/kadp"
+	"github.com/andang-secure/kadp-go/kadp"
 	"github.com/go-irain/logger"
 	"log"
 	"testing"
