@@ -331,7 +331,8 @@ func (client *KadpClient) FpeEncipher(plaintext string, fpe Fpe, tweak, alphabet
 	case FF3:
 		ciphertext, err = ff3Encrypt(plaintext, key, tweak, len([]rune(alphabet)), start, end, alphabet)
 	default:
-		fmt.Println("Invalid value")
+		err = fmt.Errorf("invalid choose value")
+		return "", err
 	}
 	if err != nil {
 		return "", err
@@ -361,7 +362,8 @@ func (client *KadpClient) FpeDecipher(ciphertext string, fpe Fpe, tweak, alphabe
 	case FF3:
 		plaintext, err = ff3Decrypt(ciphertext, key, tweak, len([]rune(alphabet)), start, end, alphabet)
 	default:
-		fmt.Println("Invalid value")
+		err = fmt.Errorf("invalid choose value")
+		return "", err
 	}
 	if err != nil {
 		return "", err
@@ -400,7 +402,8 @@ func (client *KadpClient) Encipher(plaintext []byte, design Symmetry, modeVal Mo
 	case DES:
 		ciphertext, err = tripleDesEncrypt(plaintext, []byte(key), []byte(iv))
 	default:
-		fmt.Println("Invalid value")
+		err = fmt.Errorf("invalid choose value")
+		return "", err
 	}
 	if err != nil {
 		return "", err
@@ -438,7 +441,8 @@ func (client *KadpClient) Decipher(ciphertext string, design Symmetry, modeVal M
 	case DES:
 		plaintext, err = tripleDesDecrypt(ciphertext, []byte(key), []byte(iv))
 	default:
-		fmt.Println("Invalid value")
+		err = fmt.Errorf("invalid choose value")
+		return "", err
 	}
 	if err != nil {
 		return "", err
@@ -455,14 +459,17 @@ func (client *KadpClient) AsymmetricKeyPair(design Asymmetric) (publicKey string
 	switch design {
 	case RSA:
 		pub, pri, errs = rsaKeyGenerator()
-		if err != nil {
+		if errs != nil {
 			return "", "", errs
 		}
 	case SM2:
 		pub, pri, errs = sm2GenerateKey()
-		if err != nil {
+		if errs != nil {
 			return "", "", errs
 		}
+	default:
+		errs = fmt.Errorf("invalid choose value")
+		return "", "", errs
 	}
 
 	return pub, pri, nil
@@ -483,6 +490,9 @@ func (client *KadpClient) AsymmetricPubEncrypt(plaintext string, design Asymmetr
 		if err != nil {
 			return "", err
 		}
+	default:
+		err = fmt.Errorf("invalid choose value")
+		return "", err
 	}
 
 	return ciphertext, nil
@@ -503,6 +513,9 @@ func (client *KadpClient) AsymmetricPriDecrypt(ciphertext string, design Asymmet
 		if err != nil {
 			return "", err
 		}
+	default:
+		err = fmt.Errorf("invalid choose value")
+		return "", err
 	}
 
 	return plaintext, nil
@@ -594,17 +607,19 @@ func (client *KadpClient) HmacVerify(message []byte, hmacVal, label string, leng
 	return valid, nil
 }
 
-func (client *KadpClient) SHASum(message []byte, shaHash Hash) string {
+func (client *KadpClient) SHASum(message []byte, shaHash Hash) (string, error) {
 
 	var cipherText string
+	var err error
 	switch shaHash {
 	case Sha1:
 		cipherText = sha1Sum(message)
-
 	case Sha256:
 		cipherText = sha256Sum(message)
-
+	default:
+		err = fmt.Errorf("invalid choose value")
+		return "", err
 	}
+	return cipherText, nil
 
-	return cipherText
 }

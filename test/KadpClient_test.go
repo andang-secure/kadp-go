@@ -89,13 +89,13 @@ func TestKadp(t *testing.T) {
 	}
 	logger.Debug("验证Hmac成功：", hmacVerify)
 
-	SHA1Val := myClient.SHASum([]byte("1234"), kadp.Sha1)
+	SHA1Val, err := myClient.SHASum([]byte("1234"), kadp.Sha1)
 	if err != nil {
 		fmt.Println(err)
 	}
 	logger.Debug("SHA1计算：", SHA1Val)
 
-	SHA256Val := myClient.SHASum([]byte("1234"), kadp.Sha256)
+	SHA256Val, err := myClient.SHASum([]byte("1234"), kadp.Sha256)
 	if err != nil {
 		fmt.Println(err)
 	}
