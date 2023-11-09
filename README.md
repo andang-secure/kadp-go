@@ -16,7 +16,7 @@
   项目演示DEMO地址：https://kadp.andang.cn/
 
 ## 接口文档
-  地址：https://kmc0822.coding.net/p/kadp/wiki/78#user-content-%E6%96%87%E6%A1%A3%E7%9B%AE%E5%BD%95
+  地址：http://doc.andang.cn/web/#/6/106
   
 ## 使用示例
 更多请查看test/KadpClient_test.go文件
