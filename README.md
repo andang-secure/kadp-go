@@ -7,10 +7,11 @@
  上海安当技术有限公司：https://andang.cn/
 
 ### 安当加密公众号
- ![577d1664239ea7962bb5e1b9cdcc4d69](https://github.com/andang-security/kadp-go/assets/68322100/0b7ae69b-1f89-4f47-93b0-8c6f799c2a5c)
+![577d1664239ea7962bb5e1b9cdcc4d69](https://github.com/andang-secure/kadp-go/assets/150333529/f525a574-aaa8-4d94-a0fd-f4a328bab4dc)
+
 
 ## 项目链接
-  KADP-GO ： https://github.com/andang-security/kadp-go
+  KADP-GO ： https://github.com/andang-secure/kadp-go
   
 ## 项目演示
   项目演示DEMO地址：https://kadp.andang.cn/
