@@ -28,6 +28,7 @@ var keyPair = make(map[string]string)
 
 var tokenMap = make(map[string]string)
 
+// NewKADPClient 初始化KADP
 func NewKADPClient(domain, credential, keyStoreFileName, keyStorePassWord string) (*KadpClient, error) {
 	//logger.DailyLogger(logFileDir, logFileName)
 
@@ -48,6 +49,7 @@ func NewKADPClient(domain, credential, keyStoreFileName, keyStorePassWord string
 	return KADPClient, nil
 }
 
+// init 开始加载进行连接
 func (client *KadpClient) init() error {
 	logger.Debug("开始生产rsa密钥对")
 	publicKey, privateKey, err := rsaKeyGenerator()
@@ -117,6 +119,7 @@ func (client *KadpClient) init() error {
 
 }
 
+// getDekCipherText 获取kek
 func (client *KadpClient) getDekCipherText(label string, length int) error {
 
 	reqMap := map[string]interface{}{
@@ -178,6 +181,7 @@ func (client *KadpClient) getDekCipherText(label string, length int) error {
 
 }
 
+// cipherTextDecrypt 进行dek解密
 func (client *KadpClient) cipherTextDecrypt(label string) (string, error) {
 	dekCipherReq := client.labelCipherText[label]
 
@@ -228,6 +232,7 @@ func (client *KadpClient) cipherTextDecrypt(label string) (string, error) {
 
 }
 
+// getKey keystore密钥库获取key
 func (client *KadpClient) getKey(length int, label string) error {
 
 	if length != 16 && length != 32 && length != 24 {
@@ -387,14 +392,48 @@ func (client *KadpClient) Encipher(plaintext []byte, design Symmetry, modeVal Mo
 	var ciphertext string
 	switch design {
 	case AES:
-		if modeVal == CBC {
-			if paddingVal == PKCS5Padding {
-				ciphertext, err = aseCbcPKCS5Encrypt(plaintext, []byte(key), []byte(iv))
-			} else {
+		switch modeVal {
+		case CBC:
+			if paddingVal == NoPadding {
 				ciphertext, err = aseCbcNoPadEncrypt(plaintext, []byte(key), []byte(iv))
+			} else {
+				fmt.Println("开始加密")
+				ciphertext, err = aseCbcPKCS5Encrypt(plaintext, []byte(key), []byte(iv), paddingVal)
+			}
+		case CTR:
+			if paddingVal == NoPadding {
+				ciphertext, err = aesCtrNoPadEncrypt(plaintext, []byte(key), []byte(iv))
+			} else {
+				fmt.Println("开始加密")
+				ciphertext, err = aesCtrPK5Encrypt(plaintext, []byte(key), []byte(iv), paddingVal)
+			}
+		case ECB:
+			if paddingVal == NoPadding {
+				ciphertext, err = aesEcbNoPadEncrypt(plaintext, []byte(key))
+			} else {
+				ciphertext, err = aesEcbPKCS7PadEncrypt(plaintext, []byte(key), paddingVal)
 			}
 
+		case CFB:
+			if paddingVal == NoPadding {
+				ciphertext, err = aesCfbNoPadEncrypt(plaintext, []byte(key), []byte(iv))
+			} else {
+				ciphertext, err = aesCfbPKCS7PadEncrypt(plaintext, []byte(key), []byte(iv), paddingVal)
+			}
+		case OFB:
+			if paddingVal == NoPadding {
+				ciphertext, err = aesOfbNoPadEncrypt(plaintext, []byte(key), []byte(iv))
+			} else {
+				ciphertext, err = aesOfbPK5PadEncrypt(plaintext, []byte(key), []byte(iv), paddingVal)
+			}
+		case CGM:
+			if paddingVal == NoPadding {
+				ciphertext, err = aesGcmNoPadEncrypt(plaintext, []byte(key))
+			} else {
+				ciphertext, err = aesGcmPK5PadEncrypt(plaintext, []byte(key), paddingVal)
+			}
 		}
+
 	case SM4:
 		logger.Debug("开始进行SM4加密")
 		ciphertext, err = sm4CbcEncrypt(plaintext, key)
@@ -427,12 +466,43 @@ func (client *KadpClient) Decipher(ciphertext string, design Symmetry, modeVal M
 	var plaintext string
 	switch design {
 	case AES:
-
-		if modeVal == CBC {
-			if paddingVal == PKCS5Padding {
-				plaintext, err = aseCbcPKCS5Decrypt(ciphertext, []byte(key), []byte(iv))
-			} else {
+		switch modeVal {
+		case CBC:
+			if paddingVal == NoPadding {
 				plaintext, err = aseCbcNoPadDecrypt(ciphertext, []byte(key), []byte(iv))
+			} else {
+				plaintext, err = aseCbcPKCS5Decrypt(ciphertext, []byte(key), []byte(iv), paddingVal)
+			}
+
+		case CTR:
+			if paddingVal == NoPadding {
+				plaintext, err = aesCtrNoPadDecrypt(ciphertext, []byte(key), []byte(iv))
+			} else {
+				plaintext, err = aesCtrPK5PadDecrypt(ciphertext, []byte(key), []byte(iv), paddingVal)
+			}
+		case ECB:
+			if paddingVal == NoPadding {
+				plaintext, err = aesEcbNoPadDecrypt(ciphertext, []byte(key))
+			} else {
+				plaintext, err = aesEcbPKCS7PadDecrypt(ciphertext, []byte(key), paddingVal)
+			}
+		case CFB:
+			if paddingVal == NoPadding {
+				plaintext, err = aesCfbNoPadDecrypt(ciphertext, []byte(key), []byte(iv))
+			} else {
+				plaintext, err = aesCfbPKCS7PadDecrypt(ciphertext, []byte(key), []byte(iv), paddingVal)
+			}
+		case OFB:
+			if paddingVal == NoPadding {
+				plaintext, err = aesOfbNoPadDecrypt(ciphertext, []byte(key), []byte(iv))
+			} else {
+				plaintext, err = aesOfbPK5PadDecrypt(ciphertext, []byte(key), []byte(iv), paddingVal)
+			}
+		case CGM:
+			if paddingVal == NoPadding {
+				plaintext, err = aesGcmNoPadDecrypt(ciphertext, []byte(key))
+			} else {
+				plaintext, err = aesGcmPK5PadDecrypt(ciphertext, []byte(key), paddingVal)
 			}
 
 		}
@@ -621,5 +691,4 @@ func (client *KadpClient) SHASum(message []byte, shaHash Hash) (string, error) {
 		return "", err
 	}
 	return cipherText, nil
-
 }

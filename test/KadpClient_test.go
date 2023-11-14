@@ -10,8 +10,8 @@ import (
 
 func TestKadp(t *testing.T) {
 
-	url := "https://192.168.0.190:8090"
-	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEDpPYO1M/Hr6lfNuCmfL+Du6ijtN0EwQ4ph9Khbyk/RSj0uZTs4kQCe+Dg5Rq8zBS92LJmcxUNPJb/XKi36TIYSXjsQmmZtnkmyrC10i67uO59OF/Ea9t7AsoF78ytTjPagSJH4iI3zXYUzwhgtxwsybTlBCs1NjP3ht3VT2BvKo3HakFvinHnBseEwwTKT0HdfB0So1+6YPEikKis5ejs7Pyuh9rAIEiA0NmriDFtVvF9Hqq+wZn97ZE1n6ewCXAT0vqH8egm4KqDpxfdLME+4sy7nBU5bDG20HfYG7+7BsMb/c3+8Cq1TT8oynJbZCBg=="
+	url := "https://ksp.andang.cn"
+	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rECrvbLqyIxlmK61Yl9PjnJ+Cf1egJJ/xZ/jyq/15EjEwmCk0ksXcyy36WN0/HUyZzHuq5DVzGdP0bfFs3k0vWbJBLZ1IoNenEI+3vR6eWWZRVN/ZmvMkgygDyALsF4iAiD12aHOAJI6A5GnNsiI9xYVb+JtrU67pj2HsDKMWNFm9Krrq9+YE+goXRY07W/5G5WQxeM2ZqOAOlWXRRKOcN5gPPu7fuCgVJe2QGhsr1dmmhoX3AUqkco2Q4uEPmqc8bTO/fh7/upAaG2/FbPQNW5jOkWDyCoHG5HNTQz34HUNvILrllMG8sSIaeR/Tg8GrXQ=="
 	myClient, err := kadp.NewKADPClient(url, token, "keystore.jks", "123456")
 
 	if err != nil {
@@ -25,17 +25,17 @@ func TestKadp(t *testing.T) {
 	log.Println(encrypt)
 
 	fmt.Println("FPE密文" + encrypt)
-	asdas := "asd密文"
+	asdas := "asd密文是是1"
 	decipher, err := myClient.FpeDecipher(encrypt, kadp.FF1, "1234567", "0123456789", 16, "kadp112", 2, 7)
 	fmt.Println("FPE明文：" + decipher)
 
-	encipher, err := myClient.Encipher([]byte(asdas), kadp.SM4, kadp.CBC, kadp.NoPadding, 16, "kadp112", "12345678")
+	encipher, err := myClient.Encipher([]byte(asdas), kadp.AES, kadp.CGM, kadp.PKCS7Padding, 16, "kadp112", "1234567891234567")
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Println("AES密文" + encipher)
 
-	plaintext, err := myClient.Decipher(encipher, kadp.SM4, kadp.CBC, kadp.NoPadding, 16, "kadp112", "12345678")
+	plaintext, err := myClient.Decipher(encipher, kadp.AES, kadp.CGM, kadp.PKCS7Padding, 16, "kadp112", "1234567891234567")
 
 	if err != nil {
 		return

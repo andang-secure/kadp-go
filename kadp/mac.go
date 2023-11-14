@@ -12,7 +12,6 @@ func generateHMAC(key []byte, message []byte) string {
 	h := hmac.New(sha256.New, key)
 	h.Write(message)
 	hashed := h.Sum(nil)
-
 	hexHash := base64.StdEncoding.EncodeToString(hashed)
 	return hexHash
 }
