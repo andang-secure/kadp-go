@@ -390,60 +390,47 @@ func (client *KadpClient) Encipher(plaintext []byte, design Symmetry, modeVal Mo
 	logger.Debug("获取到key：", key)
 
 	var ciphertext string
-	switch design {
-	case AES:
-		switch modeVal {
-		case CBC:
-			if paddingVal == NoPadding {
-				ciphertext, err = aseCbcNoPadEncrypt(plaintext, []byte(key), []byte(iv))
-			} else {
-				fmt.Println("开始加密")
-				ciphertext, err = aseCbcPKCS5Encrypt(plaintext, []byte(key), []byte(iv), paddingVal)
-			}
-		case CTR:
-			if paddingVal == NoPadding {
-				ciphertext, err = aesCtrNoPadEncrypt(plaintext, []byte(key), []byte(iv))
-			} else {
-				fmt.Println("开始加密")
-				ciphertext, err = aesCtrPK5Encrypt(plaintext, []byte(key), []byte(iv), paddingVal)
-			}
-		case ECB:
-			if paddingVal == NoPadding {
-				ciphertext, err = aesEcbNoPadEncrypt(plaintext, []byte(key))
-			} else {
-				ciphertext, err = aesEcbPKCS7PadEncrypt(plaintext, []byte(key), paddingVal)
-			}
 
-		case CFB:
-			if paddingVal == NoPadding {
-				ciphertext, err = aesCfbNoPadEncrypt(plaintext, []byte(key), []byte(iv))
-			} else {
-				ciphertext, err = aesCfbPKCS7PadEncrypt(plaintext, []byte(key), []byte(iv), paddingVal)
-			}
-		case OFB:
-			if paddingVal == NoPadding {
-				ciphertext, err = aesOfbNoPadEncrypt(plaintext, []byte(key), []byte(iv))
-			} else {
-				ciphertext, err = aesOfbPK5PadEncrypt(plaintext, []byte(key), []byte(iv), paddingVal)
-			}
-		case CGM:
-			if paddingVal == NoPadding {
-				ciphertext, err = aesGcmNoPadEncrypt(plaintext, []byte(key))
-			} else {
-				ciphertext, err = aesGcmPK5PadEncrypt(plaintext, []byte(key), paddingVal)
-			}
+	switch modeVal {
+	case CBC:
+		if paddingVal == NoPadding {
+			ciphertext, err = aseCbcNoPadEncrypt(plaintext, []byte(iv), key, design)
+		} else {
+			ciphertext, err = aseCbcPKCS5Encrypt(plaintext, []byte(iv), key, paddingVal, design)
+		}
+	case CTR:
+		if paddingVal == NoPadding {
+			ciphertext, err = aesCtrNoPadEncrypt(plaintext, []byte(iv), key, design)
+		} else {
+			ciphertext, err = aesCtrPK5Encrypt(plaintext, []byte(iv), key, paddingVal, design)
+		}
+	case ECB:
+		if paddingVal == NoPadding {
+			ciphertext, err = aesEcbNoPadEncrypt(plaintext, key, design)
+		} else {
+			ciphertext, err = aesEcbPKCS7PadEncrypt(plaintext, key, paddingVal, design)
 		}
 
-	case SM4:
-		logger.Debug("开始进行SM4加密")
-		ciphertext, err = sm4CbcEncrypt(plaintext, key)
-
-	case DES:
-		ciphertext, err = tripleDesEncrypt(plaintext, []byte(key), []byte(iv))
-	default:
-		err = fmt.Errorf("invalid choose value")
-		return "", err
+	case CFB:
+		if paddingVal == NoPadding {
+			ciphertext, err = aesCfbNoPadEncrypt(plaintext, []byte(iv), key, design)
+		} else {
+			ciphertext, err = aesCfbPKCS7PadEncrypt(plaintext, []byte(iv), key, paddingVal, design)
+		}
+	case OFB:
+		if paddingVal == NoPadding {
+			ciphertext, err = aesOfbNoPadEncrypt(plaintext, []byte(iv), key, design)
+		} else {
+			ciphertext, err = aesOfbPK5PadEncrypt(plaintext, []byte(iv), key, paddingVal, design)
+		}
+	case CGM:
+		if paddingVal == NoPadding {
+			ciphertext, err = aesGcmNoPadEncrypt(plaintext, key, design)
+		} else {
+			ciphertext, err = aesGcmPK5PadEncrypt(plaintext, key, paddingVal, design)
+		}
 	}
+
 	if err != nil {
 		return "", err
 	}
@@ -464,56 +451,47 @@ func (client *KadpClient) Decipher(ciphertext string, design Symmetry, modeVal M
 	logger.Debug("获取到key：", key)
 
 	var plaintext string
-	switch design {
-	case AES:
-		switch modeVal {
-		case CBC:
-			if paddingVal == NoPadding {
-				plaintext, err = aseCbcNoPadDecrypt(ciphertext, []byte(key), []byte(iv))
-			} else {
-				plaintext, err = aseCbcPKCS5Decrypt(ciphertext, []byte(key), []byte(iv), paddingVal)
-			}
-
-		case CTR:
-			if paddingVal == NoPadding {
-				plaintext, err = aesCtrNoPadDecrypt(ciphertext, []byte(key), []byte(iv))
-			} else {
-				plaintext, err = aesCtrPK5PadDecrypt(ciphertext, []byte(key), []byte(iv), paddingVal)
-			}
-		case ECB:
-			if paddingVal == NoPadding {
-				plaintext, err = aesEcbNoPadDecrypt(ciphertext, []byte(key))
-			} else {
-				plaintext, err = aesEcbPKCS7PadDecrypt(ciphertext, []byte(key), paddingVal)
-			}
-		case CFB:
-			if paddingVal == NoPadding {
-				plaintext, err = aesCfbNoPadDecrypt(ciphertext, []byte(key), []byte(iv))
-			} else {
-				plaintext, err = aesCfbPKCS7PadDecrypt(ciphertext, []byte(key), []byte(iv), paddingVal)
-			}
-		case OFB:
-			if paddingVal == NoPadding {
-				plaintext, err = aesOfbNoPadDecrypt(ciphertext, []byte(key), []byte(iv))
-			} else {
-				plaintext, err = aesOfbPK5PadDecrypt(ciphertext, []byte(key), []byte(iv), paddingVal)
-			}
-		case CGM:
-			if paddingVal == NoPadding {
-				plaintext, err = aesGcmNoPadDecrypt(ciphertext, []byte(key))
-			} else {
-				plaintext, err = aesGcmPK5PadDecrypt(ciphertext, []byte(key), paddingVal)
-			}
-
+	switch modeVal {
+	case CBC:
+		if paddingVal == NoPadding {
+			plaintext, err = aseCbcNoPadDecrypt(ciphertext, key, []byte(iv), design)
+		} else {
+			plaintext, err = aseCbcPKCS5Decrypt(ciphertext, key, []byte(iv), paddingVal, design)
 		}
-	case SM4:
-		plaintext, err = sm4CbcDecrypt(ciphertext, key)
-	case DES:
-		plaintext, err = tripleDesDecrypt(ciphertext, []byte(key), []byte(iv))
-	default:
-		err = fmt.Errorf("invalid choose value")
-		return "", err
+
+	case CTR:
+		if paddingVal == NoPadding {
+			plaintext, err = aesCtrNoPadDecrypt(ciphertext, key, []byte(iv), design)
+		} else {
+			plaintext, err = aesCtrPK5PadDecrypt(ciphertext, key, []byte(iv), paddingVal, design)
+		}
+	case ECB:
+		if paddingVal == NoPadding {
+			plaintext, err = aesEcbNoPadDecrypt(ciphertext, key, design)
+		} else {
+			plaintext, err = aesEcbPKCS7PadDecrypt(ciphertext, key, paddingVal, design)
+		}
+	case CFB:
+		if paddingVal == NoPadding {
+			plaintext, err = aesCfbNoPadDecrypt(ciphertext, key, []byte(iv), design)
+		} else {
+			plaintext, err = aesCfbPKCS7PadDecrypt(ciphertext, key, []byte(iv), paddingVal, design)
+		}
+	case OFB:
+		if paddingVal == NoPadding {
+			plaintext, err = aesOfbNoPadDecrypt(ciphertext, key, []byte(iv), design)
+		} else {
+			plaintext, err = aesOfbPK5PadDecrypt(ciphertext, key, []byte(iv), paddingVal, design)
+		}
+	case CGM:
+		if paddingVal == NoPadding {
+			plaintext, err = aesGcmNoPadDecrypt(ciphertext, key, design)
+		} else {
+			plaintext, err = aesGcmPK5PadDecrypt(ciphertext, key, paddingVal, design)
+		}
+
 	}
+
 	if err != nil {
 		return "", err
 	}
