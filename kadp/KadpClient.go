@@ -51,7 +51,6 @@ func NewKADPClient(domain, credential, keyStoreFileName, keyStorePassWord string
 
 // init 开始加载进行连接
 func (client *KadpClient) init() error {
-	logger.Debug("开始生产rsa密钥对")
 	publicKey, privateKey, err := rsaKeyGenerator()
 	if err != nil {
 		return fmt.Errorf("RSA生成密钥失败")
@@ -63,7 +62,6 @@ func (client *KadpClient) init() error {
 		logger.Error(err.Error())
 		return err
 	}
-	logger.Debug("开始获取系统信息")
 	mac, err := utils.GetMac()
 	if err != nil {
 		return fmt.Errorf("获取系统失败: %v", err)
@@ -99,7 +97,6 @@ func (client *KadpClient) init() error {
 		"token": decrypt,
 	}
 
-	logger.Debug("开始进行ksp连接")
 	result, err := utils.SendRequest("POST", client.domain+"/v1/ksp/open_api/auth", credentialMap, reqMap)
 
 	if err != nil {
@@ -126,7 +123,6 @@ func (client *KadpClient) getDekCipherText(label string, length int) error {
 		"label":  label,
 		"length": length,
 	}
-	logger.Debug("正在开始获取kek")
 
 	result, err := utils.SendRequest("POST", client.domain+"/v1/ksp/open_api/dek_text", tokenMap, reqMap)
 	if err != nil {
@@ -170,7 +166,6 @@ func (client *KadpClient) getDekCipherText(label string, length int) error {
 	versionValue := TextJson["version"]
 
 	client.labelCipherText[label] = dekText
-	logger.Debug("kekMap：", client.labelCipherText)
 	client.version = versionValue
 	_, err = client.cipherTextDecrypt(label)
 	if err != nil {
@@ -191,7 +186,6 @@ func (client *KadpClient) cipherTextDecrypt(label string) (string, error) {
 		logger.Error("解析 JSON 失败:", err)
 		return "", err
 	}
-	logger.Debug("正在开始获取dek")
 
 	result, err := utils.SendRequest("POST", client.domain+"/v1/ksp/open_api/dek", tokenMap, TextJson)
 	if err != nil {
@@ -220,7 +214,6 @@ func (client *KadpClient) cipherTextDecrypt(label string) (string, error) {
 		logger.Error(err)
 		return "", err
 	}
-	logger.Debug("正在存储key在keystore中")
 
 	keyEntry := utils.CreateKeyEntry([]byte(dekKeyBase))
 	utils.StoreSecretKey(label, keyEntry, client.keyStore, client.keyStoreFileName, []byte(client.keyStorePassWord))
@@ -242,7 +235,6 @@ func (client *KadpClient) getKey(length int, label string) error {
 	if label == "" {
 		return errors.New("label parameter cannot be empty")
 	}
-	logger.Debug("开始获取key")
 
 	keyEntry, err := client.keyStore.GetPrivateKeyEntry(label, []byte("shanghaiandanggongsi"))
 	if err != nil {
@@ -250,7 +242,6 @@ func (client *KadpClient) getKey(length int, label string) error {
 	}
 	key := string(keyEntry.PrivateKey)
 	if key == "" {
-		logger.Debug("正在获取key")
 		if client.labelCipherText[label] == "" {
 			err = client.getDekCipherText(label, length)
 			if err != nil {
@@ -272,7 +263,6 @@ func (client *KadpClient) getKey(length int, label string) error {
 		}
 		key = string(keyEntry.PrivateKey)
 	}
-	logger.Debug("使用keyStore获取到key-", key)
 
 	if client.keyMap[label] == "" {
 		client.keyMap[label] = key
@@ -327,8 +317,6 @@ func (client *KadpClient) FpeEncipher(plaintext string, fpe Fpe, tweak, alphabet
 	}
 	key := client.keyMap[label]
 
-	logger.Debug("获取到key：", key)
-
 	var ciphertext string
 	switch fpe {
 	case FF1:
@@ -347,7 +335,6 @@ func (client *KadpClient) FpeEncipher(plaintext string, fpe Fpe, tweak, alphabet
 }
 
 func (client *KadpClient) FpeDecipher(ciphertext string, fpe Fpe, tweak, alphabet string, length int, label string, start, end int) (string, error) {
-	logger.Debug("正在解密")
 	var err error
 
 	if client.keyMap[label] == "" {
@@ -357,8 +344,6 @@ func (client *KadpClient) FpeDecipher(ciphertext string, fpe Fpe, tweak, alphabe
 		}
 	}
 	key := client.keyMap[label]
-
-	logger.Debug("获取到key", key)
 
 	var plaintext string
 	switch fpe {
@@ -387,7 +372,6 @@ func (client *KadpClient) Encipher(plaintext []byte, design Symmetry, modeVal Mo
 		}
 	}
 	key := client.keyMap[label]
-	logger.Debug("获取到key：", key)
 
 	var ciphertext string
 
@@ -396,38 +380,38 @@ func (client *KadpClient) Encipher(plaintext []byte, design Symmetry, modeVal Mo
 		if paddingVal == NoPadding {
 			ciphertext, err = aseCbcNoPadEncrypt(plaintext, []byte(iv), key, design)
 		} else {
-			ciphertext, err = aseCbcPKCS5Encrypt(plaintext, []byte(iv), key, paddingVal, design)
+			ciphertext, err = aseCbcPaddingEncrypt(plaintext, []byte(iv), key, paddingVal, design)
 		}
 	case CTR:
 		if paddingVal == NoPadding {
 			ciphertext, err = aesCtrNoPadEncrypt(plaintext, []byte(iv), key, design)
 		} else {
-			ciphertext, err = aesCtrPK5Encrypt(plaintext, []byte(iv), key, paddingVal, design)
+			ciphertext, err = aesCtrPaddingEncrypt(plaintext, []byte(iv), key, paddingVal, design)
 		}
 	case ECB:
 		if paddingVal == NoPadding {
 			ciphertext, err = aesEcbNoPadEncrypt(plaintext, key, design)
 		} else {
-			ciphertext, err = aesEcbPKCS7PadEncrypt(plaintext, key, paddingVal, design)
+			ciphertext, err = aesEcbPaddingEncrypt(plaintext, key, paddingVal, design)
 		}
 
 	case CFB:
 		if paddingVal == NoPadding {
 			ciphertext, err = aesCfbNoPadEncrypt(plaintext, []byte(iv), key, design)
 		} else {
-			ciphertext, err = aesCfbPKCS7PadEncrypt(plaintext, []byte(iv), key, paddingVal, design)
+			ciphertext, err = aesCfbPaddingEncrypt(plaintext, []byte(iv), key, paddingVal, design)
 		}
 	case OFB:
 		if paddingVal == NoPadding {
 			ciphertext, err = aesOfbNoPadEncrypt(plaintext, []byte(iv), key, design)
 		} else {
-			ciphertext, err = aesOfbPK5PadEncrypt(plaintext, []byte(iv), key, paddingVal, design)
+			ciphertext, err = aesOfbPaddingEncrypt(plaintext, []byte(iv), key, paddingVal, design)
 		}
 	case CGM:
 		if paddingVal == NoPadding {
 			ciphertext, err = aesGcmNoPadEncrypt(plaintext, key, design)
 		} else {
-			ciphertext, err = aesGcmPK5PadEncrypt(plaintext, key, paddingVal, design)
+			ciphertext, err = aesGcmPaddingEncrypt(plaintext, key, paddingVal, design)
 		}
 	}
 
@@ -448,7 +432,6 @@ func (client *KadpClient) Decipher(ciphertext string, design Symmetry, modeVal M
 		}
 	}
 	key := client.keyMap[label]
-	logger.Debug("获取到key：", key)
 
 	var plaintext string
 	switch modeVal {
@@ -456,38 +439,38 @@ func (client *KadpClient) Decipher(ciphertext string, design Symmetry, modeVal M
 		if paddingVal == NoPadding {
 			plaintext, err = aseCbcNoPadDecrypt(ciphertext, key, []byte(iv), design)
 		} else {
-			plaintext, err = aseCbcPKCS5Decrypt(ciphertext, key, []byte(iv), paddingVal, design)
+			plaintext, err = aseCbcPaddingDecrypt(ciphertext, key, []byte(iv), paddingVal, design)
 		}
 
 	case CTR:
 		if paddingVal == NoPadding {
 			plaintext, err = aesCtrNoPadDecrypt(ciphertext, key, []byte(iv), design)
 		} else {
-			plaintext, err = aesCtrPK5PadDecrypt(ciphertext, key, []byte(iv), paddingVal, design)
+			plaintext, err = aesCtrPaddingDecrypt(ciphertext, key, []byte(iv), paddingVal, design)
 		}
 	case ECB:
 		if paddingVal == NoPadding {
 			plaintext, err = aesEcbNoPadDecrypt(ciphertext, key, design)
 		} else {
-			plaintext, err = aesEcbPKCS7PadDecrypt(ciphertext, key, paddingVal, design)
+			plaintext, err = aesEcbPaddingDecrypt(ciphertext, key, paddingVal, design)
 		}
 	case CFB:
 		if paddingVal == NoPadding {
 			plaintext, err = aesCfbNoPadDecrypt(ciphertext, key, []byte(iv), design)
 		} else {
-			plaintext, err = aesCfbPKCS7PadDecrypt(ciphertext, key, []byte(iv), paddingVal, design)
+			plaintext, err = aesCfbPaddingDecrypt(ciphertext, key, []byte(iv), paddingVal, design)
 		}
 	case OFB:
 		if paddingVal == NoPadding {
 			plaintext, err = aesOfbNoPadDecrypt(ciphertext, key, []byte(iv), design)
 		} else {
-			plaintext, err = aesOfbPK5PadDecrypt(ciphertext, key, []byte(iv), paddingVal, design)
+			plaintext, err = aesOfbPaddingDecrypt(ciphertext, key, []byte(iv), paddingVal, design)
 		}
 	case CGM:
 		if paddingVal == NoPadding {
 			plaintext, err = aesGcmNoPadDecrypt(ciphertext, key, design)
 		} else {
-			plaintext, err = aesGcmPK5PadDecrypt(ciphertext, key, paddingVal, design)
+			plaintext, err = aesGcmPaddingDecrypt(ciphertext, key, paddingVal, design)
 		}
 
 	}
@@ -615,7 +598,6 @@ func (client *KadpClient) DigestEncrypt(plaintext string) string {
 }
 
 func (client *KadpClient) Hmac(message []byte, label string, length int) (string, error) {
-	logger.Debug("mac签名")
 	var err error
 
 	if client.keyMap[label] == "" {
@@ -626,14 +608,11 @@ func (client *KadpClient) Hmac(message []byte, label string, length int) (string
 	}
 	key := client.keyMap[label]
 
-	logger.Debug("获取到key", key)
-
 	cipherText := generateHMAC([]byte(key), message)
 
 	return cipherText, nil
 }
 func (client *KadpClient) HmacVerify(message []byte, hmacVal, label string, length int) (bool, error) {
-	logger.Debug("mac签名")
 	var err error
 
 	if client.keyMap[label] == "" {
@@ -643,9 +622,6 @@ func (client *KadpClient) HmacVerify(message []byte, hmacVal, label string, leng
 		}
 	}
 	key := client.keyMap[label]
-
-	logger.Debug("获取到key", key)
-	logger.Debug("获取到hmac", hmacVal)
 
 	valid, err := verifyIntegrity([]byte(key), message, hmacVal)
 	if err != nil {

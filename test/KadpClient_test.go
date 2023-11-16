@@ -48,14 +48,16 @@ func TestKadp(t *testing.T) {
 	}
 	fmt.Println("公钥：", pub)
 	fmt.Println("私钥：", pri)
+	publa := "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAE6uPJNtK5mFj8QjUSJd2/R0Zag4k0\ndpQoTLkyX/8UuyTqGuZK35qR5/qQOJot01M9gAIowUokTxWobQ8mTnE28Q==\n-----END PUBLIC KEY-----"
 
-	publicEncrypt, err := myClient.AsymmetricPubEncrypt("文档是我的", kadp.SM2, pub)
+	publicEncrypt, err := myClient.AsymmetricPubEncrypt("微信文档", kadp.SM2, publa)
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Println("公钥加密过后密文：", publicEncrypt)
 
-	decrypt, err := myClient.AsymmetricPriDecrypt(publicEncrypt, kadp.SM2, pri)
+	sadd := "MHYCIQCSJTNUY/upuKc9/MW6cVLlnUO8O4/2p1eq+gkpbKnW2gIhAJqKw1y1Fu1eQ9bMHyjd4rAe8L280gI8AuWQj34aBLXOBCBQat5J4r/cYKxKJ53qm2rywjpdw7+UKOCWxNP51gXGkQQMgEW9q4OQRQVY6wua"
+	decrypt, err := myClient.AsymmetricPriDecrypt(sadd, kadp.SM2, pri)
 	if err != nil {
 		fmt.Println(err)
 	}

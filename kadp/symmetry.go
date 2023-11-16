@@ -82,8 +82,8 @@ func aseCbcNoPadDecrypt(ciphertext string, key string, iv []byte, algorithm Symm
 	return string(plaintext), nil
 }
 
-// aseCbcPKCS5Encrypt 使用AES-CBC/PKCS5Padding模式加密数据
-func aseCbcPKCS5Encrypt(plaintext, iv []byte, key string, padding Padding, algorithm Symmetry) (string, error) {
+// aseCbcPaddingEncrypt 使用AES-CBC/PKCS5Padding模式加密数据
+func aseCbcPaddingEncrypt(plaintext, iv []byte, key string, padding Padding, algorithm Symmetry) (string, error) {
 
 	keyBytes, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
@@ -126,8 +126,8 @@ func aseCbcPKCS5Encrypt(plaintext, iv []byte, key string, padding Padding, algor
 	return cipherTextBase64, nil
 }
 
-// aseCbcPKCS5Decrypt 使用AES-CBC/PKCS5Padding模式解密数据
-func aseCbcPKCS5Decrypt(ciphertext, key string, iv []byte, padding Padding, algorithm Symmetry) (string, error) {
+// aseCbcPaddingDecrypt 使用AES-CBC/PKCS5Padding模式解密数据
+func aseCbcPaddingDecrypt(ciphertext, key string, iv []byte, padding Padding, algorithm Symmetry) (string, error) {
 	textByte, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
 		return "", err
@@ -237,7 +237,7 @@ func aesCtrNoPadDecrypt(cipherText, key string, iv []byte, algorithm Symmetry) (
 	return string(dst), nil
 }
 
-func aesCtrPK5Encrypt(plainText, iv []byte, key string, padding Padding, algorithm Symmetry) (string, error) {
+func aesCtrPaddingEncrypt(plainText, iv []byte, key string, padding Padding, algorithm Symmetry) (string, error) {
 
 	keyBytes, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
@@ -281,7 +281,7 @@ func aesCtrPK5Encrypt(plainText, iv []byte, key string, padding Padding, algorit
 }
 
 // aesCtrPK5PadDecrypt 使用AES-CTR/NoPadding模式解密数据
-func aesCtrPK5PadDecrypt(cipherText, key string, iv []byte, padding Padding, algorithm Symmetry) (string, error) {
+func aesCtrPaddingDecrypt(cipherText, key string, iv []byte, padding Padding, algorithm Symmetry) (string, error) {
 
 	cipherTextByte, err := base64.StdEncoding.DecodeString(cipherText)
 	if err != nil {
@@ -398,7 +398,7 @@ func aesEcbNoPadDecrypt(ciphertext, key string, algorithm Symmetry) (string, err
 }
 
 // 使用ECB模式进行AES加密
-func aesEcbPKCS7PadEncrypt(plainText []byte, key string, padding Padding, algorithm Symmetry) (string, error) {
+func aesEcbPaddingEncrypt(plainText []byte, key string, padding Padding, algorithm Symmetry) (string, error) {
 	keyBytes, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
 		return "", err
@@ -442,7 +442,7 @@ func aesEcbPKCS7PadEncrypt(plainText []byte, key string, padding Padding, algori
 }
 
 // 使用ECB模式进行AES解密
-func aesEcbPKCS7PadDecrypt(ciphertext, key string, padding Padding, algorithm Symmetry) (string, error) {
+func aesEcbPaddingDecrypt(ciphertext, key string, padding Padding, algorithm Symmetry) (string, error) {
 
 	ciphertextByte, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
@@ -543,7 +543,7 @@ func aesCfbNoPadDecrypt(ciphertext, key string, iv []byte, algorithm Symmetry) (
 	return string(plainText), nil
 }
 
-func aesCfbPKCS7PadEncrypt(plainText, iv []byte, key string, padding Padding, algorithm Symmetry) (string, error) {
+func aesCfbPaddingEncrypt(plainText, iv []byte, key string, padding Padding, algorithm Symmetry) (string, error) {
 	keyBytes, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
 		return "", err
@@ -581,7 +581,7 @@ func aesCfbPKCS7PadEncrypt(plainText, iv []byte, key string, padding Padding, al
 	return ciphertextBase64, nil
 }
 
-func aesCfbPKCS7PadDecrypt(ciphertext, key string, iv []byte, padding Padding, algorithm Symmetry) (string, error) {
+func aesCfbPaddingDecrypt(ciphertext, key string, iv []byte, padding Padding, algorithm Symmetry) (string, error) {
 	ciphertextByte, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
 		return "", err
@@ -680,7 +680,7 @@ func aesOfbNoPadDecrypt(ciphertext, key string, iv []byte, algorithm Symmetry) (
 	return string(plainText), nil
 }
 
-func aesOfbPK5PadEncrypt(plainText, iv []byte, key string, padding Padding, algorithm Symmetry) (string, error) {
+func aesOfbPaddingEncrypt(plainText, iv []byte, key string, padding Padding, algorithm Symmetry) (string, error) {
 	keyBytes, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
 		return "", err
@@ -718,7 +718,7 @@ func aesOfbPK5PadEncrypt(plainText, iv []byte, key string, padding Padding, algo
 	return ciphertextBase64, nil
 }
 
-func aesOfbPK5PadDecrypt(ciphertext, key string, iv []byte, padding Padding, algorithm Symmetry) (string, error) {
+func aesOfbPaddingDecrypt(ciphertext, key string, iv []byte, padding Padding, algorithm Symmetry) (string, error) {
 
 	ciphertextByte, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
@@ -840,7 +840,7 @@ func aesGcmNoPadDecrypt(ciphertext, key string, algorithm Symmetry) (string, err
 	return string(plaintext), nil
 }
 
-func aesGcmPK5PadEncrypt(plainText []byte, key string, padding Padding, algorithm Symmetry) (string, error) {
+func aesGcmPaddingEncrypt(plainText []byte, key string, padding Padding, algorithm Symmetry) (string, error) {
 	keyBytes, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
 		return "", err
@@ -889,7 +889,7 @@ func aesGcmPK5PadEncrypt(plainText []byte, key string, padding Padding, algorith
 	return ciphertextBase64, nil
 }
 
-func aesGcmPK5PadDecrypt(ciphertext, key string, padding Padding, algorithm Symmetry) (string, error) {
+func aesGcmPaddingDecrypt(ciphertext, key string, padding Padding, algorithm Symmetry) (string, error) {
 	ciphertextBase64, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
 		return "", err
