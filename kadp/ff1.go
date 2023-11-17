@@ -12,19 +12,14 @@ func ff1Encrypt(plaintext, key, tweak string, radix, start, end int, alphabet ..
 		return "", err
 	}
 
-	if err != nil {
-		fmt.Println("Failed to create FF1 encrypter:", err)
-		return "", err
-	}
-
 	var middle string
 	var before string
 	var after string
 
 	if (start + end) != 0 {
 
-		before = extractSubString(plaintext, 0, start-1)
-		middle = extractSubString(plaintext, start-1, end)
+		before = extractSubString(plaintext, 0, start)
+		middle = extractSubString(plaintext, start, end)
 		after = extractSubString(plaintext, end, len(plaintext))
 	} else {
 		middle = plaintext
@@ -111,9 +106,10 @@ func ff1Decrypt(ciphertext, key, tweak string, radix, start, end int, alphabet .
 	var middle string
 	var before string
 	var after string
+
 	if (start + end) != 0 {
-		before = extractSubString(ciphertext, 0, start-1)
-		middle = extractSubString(ciphertext, start-1, end)
+		before = extractSubString(ciphertext, 0, start)
+		middle = extractSubString(ciphertext, start, end)
 		after = extractSubString(ciphertext, end, len(ciphertext))
 	} else {
 		middle = ciphertext

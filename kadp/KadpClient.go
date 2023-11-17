@@ -308,6 +308,13 @@ func (client *KadpClient) keyDecrypt(ciphertext string, key []byte) (string, err
 
 func (client *KadpClient) FpeEncipher(plaintext string, fpe Fpe, tweak, alphabet string, length int, label string, start, end int) (string, error) {
 
+	if end-start < 5 || start < 0 || end < 0 {
+		return "", errors.New("开始位到结束位长度最少为6")
+	}
+	if len(plaintext) < end {
+		return "", errors.New("结束位超出范围")
+	}
+
 	var err error
 	if client.keyMap[label] == "" {
 		err = client.getKey(length, label)
@@ -335,6 +342,13 @@ func (client *KadpClient) FpeEncipher(plaintext string, fpe Fpe, tweak, alphabet
 }
 
 func (client *KadpClient) FpeDecipher(ciphertext string, fpe Fpe, tweak, alphabet string, length int, label string, start, end int) (string, error) {
+
+	if end-start < 5 || start < 0 || end < 0 {
+		return "", errors.New("开始位到结束位长度最少为6")
+	}
+	if len(ciphertext) < end {
+		return "", errors.New("结束位超出范围")
+	}
 	var err error
 
 	if client.keyMap[label] == "" {

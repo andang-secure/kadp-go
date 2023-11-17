@@ -18,8 +18,8 @@ func ff3Encrypt(plaintext, key, tweak string, radix, start, end int, alphabet ..
 	var after string
 
 	if (start + end) != 0 {
-		before = extractSubString(plaintext, 0, start-1)
-		middle = extractSubString(plaintext, start-1, end)
+		before = extractSubString(plaintext, 0, start)
+		middle = extractSubString(plaintext, start, end)
 		after = extractSubString(plaintext, end, len(plaintext))
 	} else {
 		middle = plaintext
@@ -103,8 +103,8 @@ func ff3Decrypt(ciphertext, key, tweak string, radix, start, end int, alphabet .
 	var after string
 
 	if (start + end) != 0 {
-		before = extractSubString(ciphertext, 0, start-1)
-		middle = extractSubString(ciphertext, start-1, end)
+		before = extractSubString(ciphertext, 0, start)
+		middle = extractSubString(ciphertext, start, end)
 		after = extractSubString(ciphertext, end, len(ciphertext))
 	} else {
 		middle = ciphertext
