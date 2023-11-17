@@ -18,14 +18,14 @@ func TestKadp(t *testing.T) {
 		fmt.Println(err)
 	}
 	str := "15191812322"
-	encrypt, err := myClient.FpeEncipher(str, kadp.FF1, "1234567", "0123456789", 16, "kadp112", 1, +8)
+	encrypt, err := myClient.FpeEncipher(str, kadp.FF1, "1234567", "0123456789", 16, "kadp1123", 1, +8)
 	if err != nil {
 		fmt.Println(err)
 	}
 
 	fmt.Println("FPE密文" + encrypt)
 	asdas := "asd密文是是1"
-	decipher, err := myClient.FpeDecipher(encrypt, kadp.FF1, "1234567", "0123456789", 16, "kadp112", 1, 8)
+	decipher, err := myClient.FpeDecipher(encrypt, kadp.FF1, "1234567", "0123456789", 16, "kadp1123", 1, 8)
 	fmt.Println("FPE明文：" + decipher)
 
 	encipher, err := myClient.Encipher([]byte(asdas), kadp.SM4, kadp.ECB, kadp.ISO10126Padding, 16, "kadp112", "12345678912345678")

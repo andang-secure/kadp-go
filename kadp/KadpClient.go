@@ -31,10 +31,10 @@ var keyPair = make(map[string]string)
 var tokenMap = make(map[string]string)
 
 // NewKADPClient 初始化KADP
-func NewKADPClient(domain, credential, clientCredential, keyStoreFileName, keyStorePassWord string) (*KadpClient, error) {
+func NewKADPClient(domain, credential, clientCredential, keyStoreFileName, keyStorePassWord string) (KadpClient, error) {
 	//logger.DailyLogger(logFileDir, logFileName)
 
-	KADPClient := &KadpClient{
+	KADPClient := KadpClient{
 		domain:           domain,
 		credential:       credential,
 		clientCredential: clientCredential,
@@ -47,7 +47,7 @@ func NewKADPClient(domain, credential, clientCredential, keyStoreFileName, keySt
 	var err error
 	KADPClient.authStatus, err = KADPClient.init()
 	if err != nil {
-		return nil, err
+		return KADPClient, err
 	}
 
 	return KADPClient, nil
@@ -277,7 +277,7 @@ func (client *KadpClient) getKey(length int, label string) error {
 	}
 	key := string(keyEntry.PrivateKey)
 	if key == "" {
-		if client.labelCipherText[label] == "" {
+		if _, ok := client.keyMap[label]; !ok {
 			err = client.getDekCipherText(label, length)
 			if err != nil {
 				logger.Error(err)
@@ -299,7 +299,7 @@ func (client *KadpClient) getKey(length int, label string) error {
 		key = string(keyEntry.PrivateKey)
 	}
 
-	if client.keyMap[label] == "" {
+	if _, ok := client.keyMap[label]; !ok {
 		client.keyMap[label] = key
 	}
 
@@ -351,7 +351,7 @@ func (client *KadpClient) FpeEncipher(plaintext string, fpe Fpe, tweak, alphabet
 	}
 
 	var err error
-	if client.keyMap[label] == "" {
+	if _, ok := client.keyMap[label]; !ok {
 		err = client.getKey(length, label)
 		if err != nil {
 			return "", err
@@ -386,7 +386,7 @@ func (client *KadpClient) FpeDecipher(ciphertext string, fpe Fpe, tweak, alphabe
 	}
 	var err error
 
-	if client.keyMap[label] == "" {
+	if _, ok := client.keyMap[label]; !ok {
 		err = client.getKey(length, label)
 		if err != nil {
 			return "", err
@@ -414,7 +414,7 @@ func (client *KadpClient) FpeDecipher(ciphertext string, fpe Fpe, tweak, alphabe
 func (client *KadpClient) Encipher(plaintext []byte, design Symmetry, modeVal Mode, paddingVal Padding, length int, label, iv string) (string, error) {
 	var err error
 
-	if client.keyMap[label] == "" {
+	if _, ok := client.keyMap[label]; !ok {
 		err = client.getKey(length, label)
 		if err != nil {
 			return "", err
@@ -474,7 +474,7 @@ func (client *KadpClient) Encipher(plaintext []byte, design Symmetry, modeVal Mo
 func (client *KadpClient) Decipher(ciphertext string, design Symmetry, modeVal Mode, paddingVal Padding, length int, label, iv string) (string, error) {
 	var err error
 
-	if client.keyMap[label] == "" {
+	if _, ok := client.keyMap[label]; !ok {
 		err = client.getKey(length, label)
 		if err != nil {
 			return "", err
@@ -649,7 +649,7 @@ func (client *KadpClient) DigestEncrypt(plaintext string) string {
 func (client *KadpClient) Hmac(message []byte, label string, length int) (string, error) {
 	var err error
 
-	if client.keyMap[label] == "" {
+	if _, ok := client.keyMap[label]; !ok {
 		err = client.getKey(length, label)
 		if err != nil {
 			return "", err
@@ -664,7 +664,7 @@ func (client *KadpClient) Hmac(message []byte, label string, length int) (string
 func (client *KadpClient) HmacVerify(message []byte, hmacVal, label string, length int) (bool, error) {
 	var err error
 
-	if client.keyMap[label] == "" {
+	if _, ok := client.keyMap[label]; !ok {
 		err = client.getKey(length, label)
 		if err != nil {
 			return false, err
