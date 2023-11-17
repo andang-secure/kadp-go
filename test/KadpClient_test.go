@@ -10,9 +10,9 @@ import (
 
 func TestKadp(t *testing.T) {
 
-	url := "https://ksp.andang.cn"
-	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rECrvbLqyIxlmK61Yl9PjnJ+Cf1egJJ/xZ/jyq/15EjEwmCk0ksXcyy36WN0/HUyZzHuq5DVzGdP0bfFs3k0vWbJBLZ1IoNenEI+3vR6eWWZRVN/ZmvMkgygDyALsF4iAiD12aHOAJI6A5GnNsiI9xYVb+JtrU67pj2HsDKMWNFm9Krrq9+YE+goXRY07W/5G5WQxeM2ZqOAOlWXRRKOcN5gPPu7fuCgVJe2QGhsr1dmmhoX3AUqkco2Q4uEPmqc8bTO/fh7/upAaG2/FbPQNW5jOkWDyCoHG5HNTQz34HUNvILrllMG8sSIaeR/Tg8GrXQ=="
-	myClient, err := kadp.NewKADPClient(url, token, "keystore.jks", "123456")
+	url := "https://127.0.0.1:8090"
+	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEMQiHkMEfcYVm5LCUFDACn/4uYJNqpgHbrttZD1lDkyDuKsYM0MixYY2ZkImWaSB72eZX0pGbMKoOk5e4nAvIRcHEcQc8Lk/BmHMBRmK10wsziUiedJJB5rDzTEy2cC1/+v5f2gsHfXNjEY0aJmvegzuD2PKC72TTofMnvzJz2abUUafgTjCRnGe3x4iTN5ZKesS0JhbLLai/aJeKzdyq79J9VrY9WrZIb9CbEm4Ivsoi23z/8h+ZpNbPnRSrQcDp5Ad7EXJR30thzPxt9vzRTjElJ0bqppU9TQJDgRqKcF3Zx0nx2fynzTZabN/EKSbcw=="
+	myClient, err := kadp.NewKADPClient(url, token, "QVSxoBH+SsUH9Vl3UC3D7YGV4tw5vaI7T/joivh/7FECvH06rcTwJvHjxvzdy8cD", "keystore.jks", "123456")
 
 	if err != nil {
 		fmt.Println(err)

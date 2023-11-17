@@ -16,12 +16,14 @@ import (
 type KadpClient struct {
 	domain           string
 	credential       string
+	clientCredential string
 	version          string
 	labelCipherText  map[string]string
 	keyMap           map[string]string
 	keyStore         keystore.KeyStore
 	keyStoreFileName string
 	keyStorePassWord string
+	authStatus       bool
 }
 
 var keyPair = make(map[string]string)
@@ -29,19 +31,21 @@ var keyPair = make(map[string]string)
 var tokenMap = make(map[string]string)
 
 // NewKADPClient 初始化KADP
-func NewKADPClient(domain, credential, keyStoreFileName, keyStorePassWord string) (*KadpClient, error) {
+func NewKADPClient(domain, credential, clientCredential, keyStoreFileName, keyStorePassWord string) (*KadpClient, error) {
 	//logger.DailyLogger(logFileDir, logFileName)
 
 	KADPClient := &KadpClient{
 		domain:           domain,
 		credential:       credential,
+		clientCredential: clientCredential,
 		labelCipherText:  make(map[string]string),
 		keyMap:           make(map[string]string),
 		keyStoreFileName: keyStoreFileName,
 		keyStorePassWord: keyStorePassWord,
 		keyStore:         utils.ReadKeyStore(keyStoreFileName, []byte(keyStorePassWord)),
 	}
-	err := KADPClient.init()
+	var err error
+	KADPClient.authStatus, err = KADPClient.init()
 	if err != nil {
 		return nil, err
 	}
@@ -49,41 +53,69 @@ func NewKADPClient(domain, credential, keyStoreFileName, keyStorePassWord string
 	return KADPClient, nil
 }
 
+func (client *KadpClient) authClient(addr, system, ip string) (interface{}, error) {
+	if addr != "" && system != "" && ip != "" {
+		reqMap := map[string]string{
+			"mac_addr": addr,
+			"ip":       ip,
+			"system":   system,
+			"token":    client.clientCredential,
+		}
+		result, err := utils.AuthSendRequest("POST", client.domain+"/v1/ksp/open_api/kadp/register", reqMap)
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
+	}
+	return nil, nil
+}
+
 // init 开始加载进行连接
-func (client *KadpClient) init() error {
+func (client *KadpClient) init() (bool, error) {
 	publicKey, privateKey, err := rsaKeyGenerator()
 	if err != nil {
-		return fmt.Errorf("RSA生成密钥失败")
+		return false, fmt.Errorf("RSA生成密钥失败")
 	}
 	keyPair["publicKey"] = publicKey
 	keyPair["privateKey"] = privateKey
 	base64PublicKey, err := ExtractBase64FromPEM(publicKey)
 	if err != nil {
 		logger.Error(err.Error())
-		return err
+		return false, err
 	}
 	mac, err := utils.GetMac()
 	if err != nil {
-		return fmt.Errorf("获取系统失败: %v", err)
+		return false, fmt.Errorf("获取系统失败: %v", err)
 	}
 
 	system, err := utils.GetOsInfo()
 	if err != nil {
 		logger.Error("获取系统失败")
-		return fmt.Errorf("获取系统失败: %v", err)
+		return false, fmt.Errorf("获取系统失败: %v", err)
 	}
 
 	ip, err := utils.GetOutBoundIP()
 	if err != nil {
 		logger.Error("获取系统失败")
-		return fmt.Errorf("获取系统失败: %v", err)
+		return false, fmt.Errorf("获取系统失败: %v", err)
 	}
 
+	//开始认证
+
+	isAuthResult, err := client.authClient(mac, ip, system)
+
+	resultMap := isAuthResult.(map[string]interface{})
+	if resultMap["code"].(float64) != 0 {
+		fmt.Errorf("客户端认证失败，请重试")
+		return false, fmt.Errorf("客户端认证失败，请重试")
+	}
+
+	//通过
 	decrypt, err := client.keyDecrypt(client.credential, []byte("XIANANDANGGONGSI"))
 
 	if err != nil {
 		logger.Error("Failed to decrypt:", err)
-		return err
+		return false, err
 	}
 
 	reqMap := map[string]string{
@@ -101,18 +133,18 @@ func (client *KadpClient) init() error {
 
 	if err != nil {
 		logger.Error("Failed to send request:", err)
-		return fmt.Errorf("认证连接失败")
+		return false, fmt.Errorf("连接失败")
 	}
 
 	resultMap, ok := result.(map[string]interface{})
 	if !ok {
 		logger.Error("认证连接失败，请检查地址")
-		return fmt.Errorf("认证连接失败")
+		return false, fmt.Errorf("连接失败")
 	}
 
 	tokenMap["token"] = resultMap["data"].(string)
 
-	return nil
+	return true, nil
 
 }
 
@@ -134,7 +166,7 @@ func (client *KadpClient) getDekCipherText(label string, length int) error {
 	code := resultMap["code"].(float64)
 
 	if code == 4604 {
-		err = client.init()
+		client.authStatus, err = client.init()
 		if err != nil {
 			logger.Error("连接失败", err)
 			return err
@@ -196,7 +228,7 @@ func (client *KadpClient) cipherTextDecrypt(label string) (string, error) {
 	resultMap := result.(map[string]interface{})
 	code := resultMap["code"].(float64)
 	if code == 4604 {
-		err = client.init()
+		client.authStatus, err = client.init()
 		if err != nil {
 			return "", err
 		}
@@ -227,6 +259,9 @@ func (client *KadpClient) cipherTextDecrypt(label string) (string, error) {
 
 // getKey keystore密钥库获取key
 func (client *KadpClient) getKey(length int, label string) error {
+	if !client.authStatus {
+		return nil
+	}
 
 	if length != 16 && length != 32 && length != 24 {
 		return errors.New("length parameter error, can only be 16-24-32")
