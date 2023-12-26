@@ -1,0 +1,43 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 3 (0x3)
+    Signature Algorithm: sm2sign-with-sm3
+        Issuer: CN=ca.com
+        Validity
+            Not Before: Nov 13 09:37:22 2023 GMT
+            Not After : Oct 20 09:37:22 2123 GMT
+        Subject: CN=client_sign.com
+        Subject Public Key Info:
+            Public Key Algorithm: id-ecPublicKey
+                Public-Key: (256 bit)
+                pub:
+                    04:ea:e3:c9:36:d2:b9:98:58:fc:42:35:12:25:dd:
+                    bf:47:46:5a:83:89:34:76:94:28:4c:b9:32:5f:ff:
+                    14:bb:24:ea:1a:e6:4a:df:9a:91:e7:fa:90:38:9a:
+                    2d:d3:53:3d:80:02:28:c1:4a:24:4f:15:a8:6d:0f:
+                    26:4e:71:36:f1
+                ASN1 OID: sm2p256v1
+                NIST CURVE: SM2
+        X509v3 extensions:
+            X509v3 Key Usage: 
+                Digital Signature, Non Repudiation, Key Encipherment, Data Encipherment, Key Agreement, Certificate Sign, CRL Sign, Encipher Only
+            X509v3 Extended Key Usage: critical
+                TLS Web Server Authentication, TLS Web Client Authentication
+            X509v3 Subject Alternative Name: 
+                IP Address:192.168.0.174
+    Signature Algorithm: sm2sign-with-sm3
+         30:45:02:21:00:d4:01:84:e4:a5:09:79:d1:4c:1d:0d:e1:b9:
+         67:5c:7e:e4:b0:91:75:cb:d3:38:b8:fd:07:b4:8c:13:d4:bd:
+         b9:02:20:6c:96:42:8b:07:53:59:31:e0:68:8a:db:f5:4d:33:
+         7e:e2:90:55:2f:ae:d8:23:60:02:f0:e5:29:0f:c8:e9:f2
+-----BEGIN CERTIFICATE-----
+MIIBXjCCAQSgAwIBAgIBAzAKBggqgRzPVQGDdTARMQ8wDQYDVQQDDAZjYS5jb20w
+IBcNMjMxMTEzMDkzNzIyWhgPMjEyMzEwMjAwOTM3MjJaMBoxGDAWBgNVBAMMD2Ns
+aWVudF9zaWduLmNvbTBZMBMGByqGSM49AgEGCCqBHM9VAYItA0IABOrjyTbSuZhY
+/EI1EiXdv0dGWoOJNHaUKEy5Ml//FLsk6hrmSt+akef6kDiaLdNTPYACKMFKJE8V
+qG0PJk5xNvGjQjBAMAsGA1UdDwQEAwIA/zAgBgNVHSUBAf8EFjAUBggrBgEFBQcD
+AQYIKwYBBQUHAwIwDwYDVR0RBAgwBocEwKgArjAKBggqgRzPVQGDdQNIADBFAiEA
+1AGE5KUJedFMHQ3huWdcfuSwkXXL0zi4/Qe0jBPUvbkCIGyWQosHU1kx4GiK2/VN
+M37ikFUvrtgjYALw5SkPyOny
+-----END CERTIFICATE-----

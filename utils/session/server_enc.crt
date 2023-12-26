@@ -1,0 +1,44 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 2 (0x2)
+    Signature Algorithm: sm2sign-with-sm3
+        Issuer: CN=ca.com
+        Validity
+            Not Before: Nov 13 09:37:20 2023 GMT
+            Not After : Oct 20 09:37:20 2123 GMT
+        Subject: C=cn, ST=ee, O=cc, OU=aa, CN=server_enc
+        Subject Public Key Info:
+            Public Key Algorithm: id-ecPublicKey
+                Public-Key: (256 bit)
+                pub:
+                    04:cc:be:02:62:d4:26:de:08:20:62:ca:37:c9:a5:
+                    ff:67:fa:f8:c4:c1:3e:64:fa:c1:05:0c:00:b6:11:
+                    2e:3c:a0:32:d8:a3:66:a8:97:f8:d1:5b:3a:ce:69:
+                    32:ff:cd:14:ca:78:2c:59:1b:c8:cf:d2:ba:cc:14:
+                    76:fe:4a:83:e1
+                ASN1 OID: sm2p256v1
+                NIST CURVE: SM2
+        X509v3 extensions:
+            X509v3 Key Usage: 
+                Key Encipherment, Data Encipherment
+            X509v3 Extended Key Usage: critical
+                TLS Web Server Authentication, TLS Web Client Authentication
+            X509v3 Subject Alternative Name: 
+                IP Address:192.168.0.174
+    Signature Algorithm: sm2sign-with-sm3
+         30:44:02:20:69:68:48:9f:d6:38:29:35:f4:68:32:64:86:b5:
+         9c:ed:b8:69:3f:cc:c8:0b:e0:aa:57:ec:14:c1:72:d7:12:98:
+         02:20:54:12:87:d6:da:bf:ca:f7:0a:fc:0e:ac:43:1a:0e:6d:
+         e9:93:23:0e:ae:cd:fb:22:0a:fc:52:d8:f6:b3:c4:8b
+-----BEGIN CERTIFICATE-----
+MIIBjDCCATOgAwIBAgIBAjAKBggqgRzPVQGDdTARMQ8wDQYDVQQDDAZjYS5jb20w
+IBcNMjMxMTEzMDkzNzIwWhgPMjEyMzEwMjAwOTM3MjBaMEkxCzAJBgNVBAYTAmNu
+MQswCQYDVQQIDAJlZTELMAkGA1UECgwCY2MxCzAJBgNVBAsMAmFhMRMwEQYDVQQD
+DApzZXJ2ZXJfZW5jMFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAEzL4CYtQm3ggg
+Yso3yaX/Z/r4xME+ZPrBBQwAthEuPKAy2KNmqJf40Vs6zmky/80UyngsWRvIz9K6
+zBR2/kqD4aNCMEAwCwYDVR0PBAQDAgQwMCAGA1UdJQEB/wQWMBQGCCsGAQUFBwMB
+BggrBgEFBQcDAjAPBgNVHREECDAGhwTAqACuMAoGCCqBHM9VAYN1A0cAMEQCIGlo
+SJ/WOCk19GgyZIa1nO24aT/MyAvgqlfsFMFy1xKYAiBUEofW2r/K9wr8DqxDGg5t
+6ZMjDq7N+yIK/FLY9rPEiw==
+-----END CERTIFICATE-----

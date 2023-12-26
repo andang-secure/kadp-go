@@ -7,9 +7,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/andang-secure/kadp-go/global"
 	"github.com/andang-secure/kadp-go/utils"
+	"github.com/andang-secure/kadp-go/utils/sm4algo"
 	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	logger "github.com/sirupsen/logrus"
+	"log"
 	"regexp"
 )
 
@@ -24,6 +27,7 @@ type KadpClient struct {
 	keyStoreFileName string
 	keyStorePassWord string
 	authStatus       bool
+	sessionKey       []byte
 }
 
 var keyPair = make(map[string]string)
@@ -67,22 +71,12 @@ func (client *KadpClient) authClient(addr, system, ip string) (interface{}, erro
 		}
 		return result, nil
 	}
-	return nil, nil
+	return nil, errors.New("获取系统参数错误")
 }
 
 // init 开始加载进行连接
 func (client *KadpClient) init() (bool, error) {
-	publicKey, privateKey, err := rsaKeyGenerator()
-	if err != nil {
-		return false, fmt.Errorf("RSA生成密钥失败")
-	}
-	keyPair["publicKey"] = publicKey
-	keyPair["privateKey"] = privateKey
-	base64PublicKey, err := ExtractBase64FromPEM(publicKey)
-	if err != nil {
-		logger.Error(err.Error())
-		return false, err
-	}
+
 	mac, err := utils.GetMac()
 	if err != nil {
 		return false, fmt.Errorf("获取系统失败: %v", err)
@@ -105,6 +99,7 @@ func (client *KadpClient) init() (bool, error) {
 	isAuthResult, err := client.authClient(mac, ip, system)
 
 	resultMap := isAuthResult.(map[string]interface{})
+	fmt.Println(resultMap)
 	if resultMap["code"].(float64) != 0 {
 		fmt.Errorf("客户端认证失败，请重试")
 		return false, fmt.Errorf("客户端认证失败，请重试")
@@ -117,12 +112,14 @@ func (client *KadpClient) init() (bool, error) {
 		logger.Error("Failed to decrypt:", err)
 		return false, err
 	}
+	signRandom, PubRandom, err := utils.CreateRomdomPub()
 
 	reqMap := map[string]string{
-		"mac_addr": mac,
-		"pub":      base64PublicKey,
-		"system":   system,
-		"ip":       ip,
+		"mac_addr":    mac,
+		"system":      system,
+		"ip":          ip,
+		"pub_random":  PubRandom,
+		"sign_random": signRandom,
 	}
 
 	credentialMap := map[string]string{
@@ -136,13 +133,26 @@ func (client *KadpClient) init() (bool, error) {
 		return false, fmt.Errorf("连接失败")
 	}
 
-	resultMap, ok := result.(map[string]interface{})
-	if !ok {
-		logger.Error("认证连接失败，请检查地址")
-		return false, fmt.Errorf("连接失败")
+	var loginResp = global.AuthResponse{}
+	resultByte, err := json.Marshal(result)
+
+	err = json.Unmarshal(resultByte, &loginResp)
+	if err != nil {
+		log.Println("反序列化失败")
+		return false, err
 	}
 
-	tokenMap["token"] = resultMap["data"].(string)
+	PubRandomR := loginResp.Data["pub_random"]
+	SignRandomR := loginResp.Data["sign_random"]
+	MyRandomData := loginResp.Data["random_data"]
+	tokenMap["token"] = loginResp.Data["token"]
+
+	//tokenMap["token"] = resultMap["data"].(string)
+	key, err := utils.SessionKeyResp(PubRandomR, SignRandomR, MyRandomData)
+	if err != nil {
+		return false, err
+	}
+	client.sessionKey = key
 
 	return true, nil
 
@@ -179,17 +189,16 @@ func (client *KadpClient) getDekCipherText(label string, length int) error {
 		resultMap = result.(map[string]interface{})
 	}
 	data := resultMap["data"].(string)
-
-	privateKey := keyPair["privateKey"]
-	dekText, err := rsaDecryptWithPrivateKey(privateKey, data)
-
+	bodyByte, _ := base64.StdEncoding.DecodeString(data)
+	kekText, err := sm4algo.Sm4CBCDecrypt(bodyByte, client.sessionKey[:16], client.sessionKey[16:])
+	fmt.Println("dek解密成功", kekText)
 	if err != nil {
 		logger.Error("failed to decrypt:", err)
 		return errors.New("failed to decrypt")
 	}
 
 	var TextJson map[string]string
-	err = json.Unmarshal([]byte(dekText), &TextJson)
+	err = json.Unmarshal([]byte(kekText), &TextJson)
 	if err != nil {
 		logger.Error("解析 JSON 失败:", err)
 		return err
@@ -197,7 +206,7 @@ func (client *KadpClient) getDekCipherText(label string, length int) error {
 
 	versionValue := TextJson["version"]
 
-	client.labelCipherText[label] = dekText
+	client.labelCipherText[label] = kekText
 	client.version = versionValue
 	_, err = client.cipherTextDecrypt(label)
 	if err != nil {
@@ -240,10 +249,13 @@ func (client *KadpClient) cipherTextDecrypt(label string) (string, error) {
 		resultMap = result.(map[string]interface{})
 	}
 	dek := resultMap["data"].(string)
-	privateKey := keyPair["privateKey"]
-	dekKeyBase, err := rsaDecryptWithPrivateKey(privateKey, dek)
+
+	bodyByte, _ := base64.StdEncoding.DecodeString(dek)
+	dekKeyBase, err := sm4algo.Sm4CBCDecrypt(bodyByte, client.sessionKey[:16], client.sessionKey[16:])
+	fmt.Println("dek解密成功", dekKeyBase)
+
 	if err != nil {
-		logger.Error(err)
+		logger.Error("秘钥错误,解密失败", err)
 		return "", err
 	}
 

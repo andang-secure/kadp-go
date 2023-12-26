@@ -1,0 +1,33 @@
+Subject Public Key Info:
+            Public Key Algorithm: id-ecPublicKey
+                Public-Key: (256 bit)
+                pub:
+                    04:fd:1c:37:bc:c9:91:23:73:35:6b:32:75:e4:d2:
+                    3a:f6:75:d4:c9:f6:f5:33:4d:70:00:bb:d8:e8:d7:
+                    ab:00:d2:89:cc:31:1f:21:82:6f:66:fd:97:b9:f6:
+                    cd:ed:e5:09:1f:16:b4:6d:06:d2:f9:99:2f:f4:74:
+                    1d:56:cf:86:61
+                ASN1 OID: sm2p256v1
+                NIST CURVE: SM2
+        X509v3 extensions:
+            X509v3 Key Usage: 
+                Digital Signature, Non Repudiation, Key Encipherment, Data Encipherment, Key Agreement, Certificate Sign, CRL Sign, Encipher Only
+            X509v3 Extended Key Usage: critical
+                TLS Web Server Authentication, TLS Web Client Authentication
+            X509v3 Subject Alternative Name: 
+                IP Address:192.168.0.200
+    Signature Algorithm: sm2sign-with-sm3
+         30:45:02:20:48:c6:b7:18:4b:80:36:07:7a:63:14:91:c8:e9:
+         b7:1e:c6:3f:4c:21:00:2a:ac:e3:d0:ab:07:d1:76:b0:3d:b8:
+         02:21:00:f9:a0:23:12:8c:3b:cc:19:15:1f:8b:0e:41:52:29:
+         22:54:c6:21:a0:ea:8d:3c:13:fe:19:86:f1:b7:e7:70:e1
+-----BEGIN CERTIFICATE-----
+MIIBXjCCAQSgAwIBAgIBAzAKBggqgRzPVQGDdTARMQ8wDQYDVQQDDAZjYS5jb20w
+IBcNMjMxMTEzMTAyNjI1WhgPMjEyMzEwMjAxMDI2MjVaMBoxGDAWBgNVBAMMD2Ns
+aWVudF9zaWduLmNvbTBZMBMGByqGSM49AgEGCCqBHM9VAYItA0IABP0cN7zJkSNz
+NWsydeTSOvZ11Mn29TNNcAC72OjXqwDSicwxHyGCb2b9l7n2ze3lCR8WtG0G0vmZ
+L/R0HVbPhmGjQjBAMAsGA1UdDwQEAwIA/zAgBgNVHSUBAf8EFjAUBggrBgEFBQcD
+AQYIKwYBBQUHAwIwDwYDVR0RBAgwBocEwKgAyDAKBggqgRzPVQGDdQNIADBFAiBI
+xrcYS4A2B3pjFJHI6bcexj9MIQAqrOPQqwfRdrA9uAIhAPmgIxKMO8wZFR+LDkFS
+KSJUxiGg6o08E/4ZhvG353Dh
+-----END CERTIFICATE-----

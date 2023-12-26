@@ -1,0 +1,44 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 1 (0x1)
+    Signature Algorithm: sm2sign-with-sm3
+        Issuer: CN=ca.com
+        Validity
+            Not Before: Nov 13 09:37:16 2023 GMT
+            Not After : Oct 20 09:37:16 2123 GMT
+        Subject: C=CN, ST=GD, O=CO, OU=NS, CN=server_sign
+        Subject Public Key Info:
+            Public Key Algorithm: id-ecPublicKey
+                Public-Key: (256 bit)
+                pub:
+                    04:a7:e6:82:00:83:30:d1:05:97:6d:de:cf:79:77:
+                    14:23:8e:af:6d:73:c5:6d:47:bb:89:42:ff:60:3b:
+                    28:86:e4:b5:6d:8b:15:12:c9:0f:6a:12:2a:da:17:
+                    e2:85:f2:b6:cc:5e:16:cf:fd:38:5c:13:4c:36:56:
+                    99:6d:b4:41:6a
+                ASN1 OID: sm2p256v1
+                NIST CURVE: SM2
+        X509v3 extensions:
+            X509v3 Key Usage: 
+                Digital Signature, Non Repudiation, Key Encipherment, Data Encipherment, Key Agreement, Certificate Sign, CRL Sign, Encipher Only
+            X509v3 Extended Key Usage: critical
+                TLS Web Server Authentication, TLS Web Client Authentication
+            X509v3 Subject Alternative Name: 
+                IP Address:192.168.0.174
+    Signature Algorithm: sm2sign-with-sm3
+         30:44:02:20:45:cf:5e:24:b8:eb:fc:ba:87:17:4c:c9:ee:2d:
+         4f:fc:24:28:f6:dd:c8:2b:60:6f:c3:13:00:21:a4:c5:b4:1c:
+         02:20:06:32:21:42:57:88:4a:81:ab:f8:7d:38:51:ff:bf:c0:
+         61:aa:5a:be:cd:1d:8a:13:9d:8c:de:7f:17:a1:04:85
+-----BEGIN CERTIFICATE-----
+MIIBjTCCATSgAwIBAgIBATAKBggqgRzPVQGDdTARMQ8wDQYDVQQDDAZjYS5jb20w
+IBcNMjMxMTEzMDkzNzE2WhgPMjEyMzEwMjAwOTM3MTZaMEoxCzAJBgNVBAYTAkNO
+MQswCQYDVQQIDAJHRDELMAkGA1UECgwCQ08xCzAJBgNVBAsMAk5TMRQwEgYDVQQD
+DAtzZXJ2ZXJfc2lnbjBZMBMGByqGSM49AgEGCCqBHM9VAYItA0IABKfmggCDMNEF
+l23ez3l3FCOOr21zxW1Hu4lC/2A7KIbktW2LFRLJD2oSKtoX4oXytsxeFs/9OFwT
+TDZWmW20QWqjQjBAMAsGA1UdDwQEAwIA/zAgBgNVHSUBAf8EFjAUBggrBgEFBQcD
+AQYIKwYBBQUHAwIwDwYDVR0RBAgwBocEwKgArjAKBggqgRzPVQGDdQNHADBEAiBF
+z14kuOv8uocXTMnuLU/8JCj23cgrYG/DEwAhpMW0HAIgBjIhQleISoGr+H04Uf+/
+wGGqWr7NHYoTnYzefxehBIU=
+-----END CERTIFICATE-----

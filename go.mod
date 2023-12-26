@@ -6,7 +6,7 @@ require (
 	github.com/go-irain/logger v0.0.0-20230223072524-081176c345af
 	github.com/pavlo-v-chernykh/keystore-go/v4 v4.5.0
 	github.com/sirupsen/logrus v1.9.3
-	github.com/tjfoc/gmsm v1.4.1
+	github.com/tjfoc/gmsm v1.4.2-0.20220114090716-36b992c51540
 	gitlab.com/ubiqsecurity/ubiq-fpe-go v0.0.0-20231019135216-0c6a075b3a73
 )
 
