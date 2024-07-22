@@ -108,3 +108,26 @@ func StoreSecretKey(alias string, keyEntry keystore.PrivateKeyEntry, ks keystore
 		log.Fatal(err) //nolint: gocritic
 	}
 }
+
+func StoreSecretKeySMS(alias string, keyEntry keystore.PrivateKeyEntry, ks keystore.KeyStore, filename string, password []byte) {
+	f, err := os.Create(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+	err = ks.SetPrivateKeyEntry(alias, keyEntry, password)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	err = ks.Store(f, password)
+
+	if err != nil {
+		log.Fatal(err) //nolint: gocritic
+	}
+}

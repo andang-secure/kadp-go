@@ -141,11 +141,11 @@ func (client *SMSClient) init() (bool, error) {
 	//5. 存储keystore文件
 	keyEntryPri := utils.CreateKeyEntry([]byte(pri))
 	keyEntryPub := utils.CreateKeyEntry([]byte(pub))
-	utils.StoreSecretKey("pri", keyEntryPri, ks, client.keyStoreFileName, []byte(user.KeyStorePwd))
+	utils.StoreSecretKeySMS("pri", keyEntryPri, ks, client.keyStoreFileName, []byte(user.KeyStorePwd))
 	if err != nil {
 		return false, err
 	}
-	utils.StoreSecretKey("pub", keyEntryPub, ks, client.keyStoreFileName, []byte(user.KeyStorePwd))
+	utils.StoreSecretKeySMS("pub", keyEntryPub, ks, client.keyStoreFileName, []byte(user.KeyStorePwd))
 	if err != nil {
 		return false, err
 	}
