@@ -10,7 +10,6 @@ import (
 	logger "github.com/sirupsen/logrus"
 	"log"
 	"strconv"
-	"strings"
 )
 
 type SMSClient struct {
@@ -116,7 +115,7 @@ func (client *SMSClient) init() (bool, error) {
 		return false, err
 	}
 	if loginResp.Code != 0 {
-		fmt.Errorf("客户端认证失败，请重试")
+		fmt.Errorf("客户端认证失败，请重试", loginResp.Code, loginResp.Msg)
 		return false, fmt.Errorf("客户端认证失败，请重试")
 	}
 
@@ -127,6 +126,7 @@ func (client *SMSClient) init() (bool, error) {
 		log.Println("解析token文件失败", err)
 		return false, err
 	}
+	fmt.Println("------------", user.KeyStorePwd)
 	//client.keyStorePassWord = user.KeyStorePwd
 	client.keyStorePassWord = "shanghaiandanggongsi"
 	user.KeyStorePwd = "shanghaiandanggongsi"
@@ -168,9 +168,10 @@ func (client *SMSClient) GetSmsCipherText(label string) (string, error) {
 	}
 	log.Printf("%#v", string(pub.PrivateKey))
 	// 去除头尾
-	publicKey := strings.TrimSpace(string(pub.PrivateKey))
-	cleanedKey := strings.TrimPrefix(strings.TrimSuffix(publicKey, "-----END PUBLIC KEY-----"), "-----BEGIN PUBLIC KEY-----")
-	fmt.Println(cleanedKey)
+	//publicKey := strings.TrimSpace(string(pub.PrivateKey))
+	//cleanedKey := strings.TrimPrefix(strings.TrimSuffix(publicKey, "-----END PUBLIC KEY-----"), "-----BEGIN PUBLIC KEY-----")
+	//fmt.Println(cleanedKey)
+	//base64.StdEncoding.EncodeToString(pub.PrivateKey)
 	//2.组织参数
 	/*
 		{
@@ -212,8 +213,8 @@ func (client *SMSClient) GetSmsCipherText(label string) (string, error) {
 	}
 	reqMap := map[string]string{
 		"label": label,
-		//"pub":   base64.StdEncoding.EncodeToString(pub.PrivateKey),
-		"pub": cleanedKey,
+		"pub":   base64.StdEncoding.EncodeToString(pub.PrivateKey),
+		//"pub": cleanedKey,
 	}
 	credentialMap := map[string]string{
 		"token": tokenMap1["token"],
