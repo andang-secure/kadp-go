@@ -43,3 +43,11 @@ myClient, err := kadp.NewKADPClient(url, token, "keystore.jks", "123456")
  decipher, err := myClient.FpeDecipher(encrypt, kadp.FF1, "1234567", "0123456789", 16, "kadp112", 2, 7)
 
   ```
+
+更多请查看test/SMSClient_test.go文件,也可以直接运行main.go文件,请替换appKey和appSecret的值
+  ```
+//domain:安当KSP地址，
+//appKey：安当用户的appKey
+//appSecret：安当用户的appSecret
+//keyStoreFileName："sdk-keystore.jks"
+client, err := kadp.NewSMSClient(domain, appKey, appSecret, keyStoreFileName, "")
