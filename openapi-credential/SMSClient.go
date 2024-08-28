@@ -77,7 +77,7 @@ func (client *SMSClient) authClient(addr, system, ip string) (interface{}, error
 		}
 		result, err := utils.AuthSendRequest("POST", client.domain+"/v1/ksp/open_api/login", reqMap)
 		if err != nil {
-			return nil, err
+			return nil, errors.New("认证客户端错误")
 		}
 		return result, nil
 	}
@@ -112,10 +112,10 @@ func (client *SMSClient) init() (bool, error) {
 	err = json.Unmarshal(resultByte, &loginResp)
 	if err != nil {
 		log.Println("反序列化失败")
-		return false, err
+		return false, fmt.Errorf("反序列化失败")
 	}
 	if loginResp.Code != 0 {
-		fmt.Errorf("客户端认证失败，请重试", loginResp.Code, loginResp.Msg)
+		fmt.Errorf("客户端认证失败，请重试%d:%s", loginResp.Code, loginResp.Msg)
 		return false, fmt.Errorf("客户端认证失败，请重试")
 	}
 
@@ -124,7 +124,7 @@ func (client *SMSClient) init() (bool, error) {
 	user, err := utils.ParseToken(tokenMap1["token"])
 	if err != nil {
 		log.Println("解析token文件失败", err)
-		return false, err
+		return false, fmt.Errorf("解析token文件失败，请重试")
 	}
 	fmt.Println("------------", user.KeyStorePwd)
 	//client.keyStorePassWord = user.KeyStorePwd
@@ -136,18 +136,21 @@ func (client *SMSClient) init() (bool, error) {
 	//4.生成公私钥对
 	pub, pri, errs := rsaKeyGenerator()
 	if errs != nil {
-		return false, errs
+		_ = fmt.Errorf("生成密钥对失败%s", errs.Error())
+		return false, fmt.Errorf("生成密钥对失败")
 	}
 	//5. 存储keystore文件
 	keyEntryPri := utils.CreateKeyEntry([]byte(pri))
 	keyEntryPub := utils.CreateKeyEntry([]byte(pub))
 	utils.StoreSecretKeySMS("pri", keyEntryPri, ks, client.keyStoreFileName, []byte(user.KeyStorePwd))
 	if err != nil {
-		return false, err
+		_ = fmt.Errorf("StoreSecretKeySMS-err%s", err.Error())
+		return false, fmt.Errorf("SDK错误")
 	}
 	utils.StoreSecretKeySMS("pub", keyEntryPub, ks, client.keyStoreFileName, []byte(user.KeyStorePwd))
 	if err != nil {
-		return false, err
+		_ = fmt.Errorf("StoreSecretKeySMS-err%s", err.Error())
+		return false, fmt.Errorf("SDK错误")
 	}
 	return true, nil
 }
@@ -157,70 +160,31 @@ func (client *SMSClient) GetSmsCipherText(label string) (string, error) {
 	//1.先从keystore中获取私钥和公钥
 	pri, err := ks.GetPrivateKeyEntry("pri", []byte(client.keyStorePassWord))
 	if err != nil {
-		log.Fatal(err)
-		return "", err
+		log.Print(err)
+		return "", errors.New("sdk-获取私钥失败")
 	}
 	log.Printf("%#v", string(pri.PrivateKey))
 	pub, err := ks.GetPrivateKeyEntry("pub", []byte(client.keyStorePassWord))
 	if err != nil {
-		log.Fatal(err)
-		return "", err
+		log.Print(err)
+		return "", errors.New("sdk-获取公钥失败")
 	}
 	log.Printf("%#v", string(pub.PrivateKey))
-	// 去除头尾
-	//publicKey := strings.TrimSpace(string(pub.PrivateKey))
-	//cleanedKey := strings.TrimPrefix(strings.TrimSuffix(publicKey, "-----END PUBLIC KEY-----"), "-----BEGIN PUBLIC KEY-----")
-	//fmt.Println(cleanedKey)
-	//base64.StdEncoding.EncodeToString(pub.PrivateKey)
-	//2.组织参数
-	/*
-		{
-			request_ := utils.NewRequest()
-			request_.Protocol = util.DefaultString(client.Protocol, protocol)
-			request_.Method = method
-			request_.Pathname = tea.String("/")
-			request_.Headers = tea.Merge(requestHeaders)
-			request_.Headers["accept"] = tea.String("application/x-protobuf")
-			request_.Headers["host"] = client.Endpoint
-			request_.Headers["date"] = util.GetDateUTCString()
-			request_.Headers["user-agent"] = client.UserAgent
-			request_.Headers["x-kms-apiversion"] = apiVersion
-			request_.Headers["x-kms-apiname"] = apiName
-			request_.Headers["x-kms-signaturemethod"] = signatureMethod
-			request_.Headers["x-kms-acccesskeyid"] = client.Credential.GetAccessKeyId()
-			request_.Headers["content-type"] = tea.String("application/x-protobuf")
-			request_.Headers["content-length"], _err = dedicatedkmsopenapiutil.GetContentLength(reqBodyBytes)
-			if _err != nil {
-				return _result, _err
-			}
-
-			request_.Headers["content-sha256"] = string_.ToUpper(openapiutil.HexEncode(openapiutil.Hash(reqBodyBytes, tea.String("ACS3-RSA-SHA256"))))
-			request_.Body = tea.ToReader(reqBodyBytes)
-			strToSign, _err := dedicatedkmsopenapiutil.GetStringToSign(method, request_.Pathname, request_.Headers, request_.Query)
-			if _err != nil {
-				return _result, _err
-			}
-		}
-	*/
-
-	//3.私钥签名参数
-	rsaSign(string(pri.PrivateKey), []byte(""))
-
+	
 	//4.发送请求
-
 	if label == "" || len(pub.PrivateKey) == 0 {
 		return "", err
 	}
 	reqMap := map[string]string{
 		"label": label,
 		"pub":   base64.StdEncoding.EncodeToString(pub.PrivateKey),
-		//"pub": cleanedKey,
 	}
 	credentialMap := map[string]string{
 		"token": tokenMap1["token"],
 	}
 
-	result, err := utils.SendRequest("POST", client.domain+"/v1/ksp/open_api/credential/cipher", credentialMap, reqMap)
+	//result, err := utils.SendRequest("POST", client.domain+"/v1/ksp/open_api/credential/cipher", credentialMap, reqMap)
+	result, err := utils.SendSdkAuthRequest("POST", client.domain+"/v1/ksp/open_api/credential/cipher", credentialMap, reqMap, base64.StdEncoding.EncodeToString(pri.PrivateKey), base64.StdEncoding.EncodeToString(pub.PrivateKey))
 	if err != nil {
 		logger.Error("Failed to send request:", err)
 		return "", errors.New("failed to send request")
@@ -254,7 +218,7 @@ func (client *SMSClient) GetSmsCipherText(label string) (string, error) {
 	}
 	if getCipherResp.Code != 0 {
 		fmt.Errorf("客户端获取密文失败，请重试")
-		return "", fmt.Errorf("客户端获取密文失败，请重试")
+		return "", fmt.Errorf("客户端获取密文失败，请重试.%s", getCipherResp.Msg)
 	}
 	cipherText := getCipherResp.Data["ciphertext"]
 	cipherKey := getCipherResp.Data["cipher_key"]

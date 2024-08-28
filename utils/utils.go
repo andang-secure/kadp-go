@@ -8,7 +8,9 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
+	"fmt"
 	"io"
+	"strings"
 )
 
 // Request is used wrap http request
@@ -41,27 +43,22 @@ func SignString(stringToSign string, pri string) (result string, err error) {
 	return base64.StdEncoding.EncodeToString(sig), nil
 }
 
-//func GetStringToSign(method string, pathname string, headers map[string]string, query map[string]string) (result string, err error) {
-//	contentSHA256 := headers["content-sha256"]
-//
-//	contentType := headers["content-type"]
-//
-//	date := headers["date"]
-//
-//	header := method + "\n" + contentSHA256 + "\n" + contentType + "\n" + date + "\n"
-//	canonicalizedHeaders, _err := GetCanonicalizedHeaders(headers)
-//	if _err != nil {
-//		return _result, _err
-//	}
-//
-//	canonicalizedResource, _err := GetCanonicalizedResource(pathname, query)
-//	if _err != nil {
-//		return _result, _err
-//	}
-//
-//	_result = tea.String(tea.StringValue(header) + tea.StringValue(canonicalizedHeaders) + tea.StringValue(canonicalizedResource))
-//	return _result, _err
-//}
+func GetStringToSign(method string, headers map[string]string) (result string, err error) {
+	contentSHA256 := headers["content-sha256"]
+
+	contentType := headers["content-type"]
+
+	date := headers["date"]
+
+	header := method + "\n" + contentSHA256 + "\n" + contentType + "\n" + date + "\n"
+	canonicalizedKSPHeaders := strings.Join([]string{
+		fmt.Sprintf("x-ksp-acccesskeyid:%s", headers["x-ksp-acccesskeyid"]),
+		fmt.Sprintf("x-ksp-apiname:%s", headers["x-ksp-apiname"]),
+	}, "\n")
+	canonicalizedResource := "/"
+
+	return header + canonicalizedKSPHeaders + canonicalizedResource, err
+}
 
 func NewRequest() (req *Request) {
 	return &Request{

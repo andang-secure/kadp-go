@@ -2,14 +2,19 @@ package utils
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"crypto/tls"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	logger "github.com/sirupsen/logrus"
 	"github.com/tjfoc/gmsm/gmtls"
 	"github.com/tjfoc/gmsm/x509"
 	"io/ioutil"
 	"net/http"
+	"strings"
+	"time"
 )
 
 const (
@@ -58,6 +63,84 @@ func SendRequest(method, url string, header map[string]string, params interface{
 	if err != nil {
 		logger.Error("Response decoding error:", err)
 		return nil, err
+	}
+
+	// 处理响应数据
+	logger.Debug("Response Data:", result)
+	return result, nil
+}
+
+func SendSdkAuthRequest(method, url string, header map[string]string, params interface{}, pri string, pub string) (interface{}, error) {
+	// 创建自定义的TLS配置，禁用证书验证
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+
+	// 创建自定义的Transport，使用自定义的TLS配置
+	tr := &http.Transport{
+		TLSClientConfig: tlsConfig,
+	}
+
+	data, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+	paramsBuffer := bytes.NewBuffer(data)
+	client := &http.Client{Transport: tr}
+
+	req, err := http.NewRequest(method, url, paramsBuffer)
+	if err != nil {
+		return nil, err
+	}
+
+	hash := sha256.New()
+	hash.Write(data)
+	sha256Bytes := hash.Sum(nil)
+	// 转换为大写十六进制字符串
+	contentSHA256 := strings.ToUpper(hex.EncodeToString(sha256Bytes))
+	contentType := "application/json"
+	apiName := "Encrypt"
+
+	headerReq := NewRequest()
+
+	headerReq.Headers["Method"] = method
+	headerReq.Headers["content-sha256"] = contentSHA256
+	headerReq.Headers["content-type"] = contentType
+	headerReq.Headers["date"] = time.Now().Format(time.RFC1123)
+	headerReq.Headers["x-ksp-acccesskeyid"] = pub //base64编码
+	headerReq.Headers["x-ksp-apiname"] = apiName
+
+	strToSign, _err := GetStringToSign(method, headerReq.Headers)
+	if _err != nil {
+		logger.Error("组织签名字符串 error:", _err)
+		return "", errors.New("组织签名字符串 error")
+	}
+
+	//3.私钥签名参数
+	signStrBase64, err := SignString(strToSign, pri)
+	if _err != nil {
+		logger.Error("私钥签名 error:", _err)
+		return "", errors.New("私钥签名 error")
+	}
+	for k, v := range header {
+		req.Header.Set(k, v)
+	}
+	for k, v := range headerReq.Headers {
+		req.Header.Set(k, v)
+	}
+	req.Header.Set("Sign-Header", signStrBase64)
+	response, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer response.Body.Close()
+	// 读取响应体
+	var result map[string]interface{}
+	err = json.NewDecoder(response.Body).Decode(&result)
+	if err != nil {
+		logger.Error("Response decoding error:", err)
+		return nil, errors.New("Response decoding error")
 	}
 
 	// 处理响应数据
