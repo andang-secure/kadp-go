@@ -7,9 +7,12 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"io"
+	"log"
+	"sort"
 	"strings"
 )
 
@@ -50,14 +53,14 @@ func GetStringToSign(method string, headers map[string]string) (result string, e
 
 	date := headers["date"]
 
-	header := method + "\n" + contentSHA256 + "\n" + contentType + "\n" + date + "\n"
+	header := strings.ToLower(method) + "\n" + contentSHA256 + "\n" + contentType + "\n" + date + "\n"
 	canonicalizedKSPHeaders := strings.Join([]string{
 		fmt.Sprintf("x-ksp-acccesskeyid:%s", headers["x-ksp-acccesskeyid"]),
 		fmt.Sprintf("x-ksp-apiname:%s", headers["x-ksp-apiname"]),
 	}, "\n")
 	canonicalizedResource := "/"
 
-	return header + canonicalizedKSPHeaders + canonicalizedResource, err
+	return header + canonicalizedKSPHeaders + "\n" + canonicalizedResource, err
 }
 
 func NewRequest() (req *Request) {
@@ -65,4 +68,31 @@ func NewRequest() (req *Request) {
 		Headers: map[string]string{},
 		Query:   map[string]string{},
 	}
+}
+
+func SortJSONKeysByASCII(jsonStr string) (reqCont string, err error) {
+	// 解析 JSON 数据到 map
+	var dataMap map[string]interface{}
+	log.Println("---------------------body字符串json--------", jsonStr)
+	err = json.Unmarshal([]byte(jsonStr), &dataMap)
+	if err != nil {
+		return "", fmt.Errorf("error unmarshaling JSON: %w", err)
+	}
+	// 提取所有键
+	keys := make([]string, 0, len(dataMap))
+	for k := range dataMap {
+		keys = append(keys, k)
+	}
+	// 按 ASCII 顺序排序键
+	sort.Strings(keys)
+
+	// 创建排序后的键值对列表
+	var str string
+	for _, k := range keys {
+		if k != "token" {
+			str += fmt.Sprintf(`%s=%v&`, k, dataMap[k])
+		}
+	}
+	str = strings.TrimRight(str, "&")
+	return str, nil
 }

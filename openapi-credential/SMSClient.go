@@ -127,11 +127,12 @@ func (client *SMSClient) init() (bool, error) {
 		return false, fmt.Errorf("解析token文件失败，请重试")
 	}
 	fmt.Println("------------", user.KeyStorePwd)
-	//client.keyStorePassWord = user.KeyStorePwd
-	client.keyStorePassWord = "shanghaiandanggongsi"
-	user.KeyStorePwd = "shanghaiandanggongsi"
+	client.keyStorePassWord = user.KeyStorePwd
+	//client.keyStorePassWord = "shanghaiandanggongsi"
+	//user.KeyStorePwd = "shanghaiandanggongsi"
 	//3.认证通过开始创建keystore文件
-	ks := utils.ReadKeyStore(client.keyStoreFileName, []byte(user.KeyStorePwd))
+	ks := utils.ReadKeyStore(client.keyStoreFileName, []byte(client.keyStorePassWord))
+	//ks := utils.ReadKeyStore(client.keyStoreFileName, []byte(user.KeyStorePwd))
 
 	//4.生成公私钥对
 	pub, pri, errs := rsaKeyGenerator()
@@ -142,12 +143,12 @@ func (client *SMSClient) init() (bool, error) {
 	//5. 存储keystore文件
 	keyEntryPri := utils.CreateKeyEntry([]byte(pri))
 	keyEntryPub := utils.CreateKeyEntry([]byte(pub))
-	utils.StoreSecretKeySMS("pri", keyEntryPri, ks, client.keyStoreFileName, []byte(user.KeyStorePwd))
+	utils.StoreSecretKeySMS("pri", keyEntryPri, ks, client.keyStoreFileName, []byte(client.keyStorePassWord))
 	if err != nil {
 		_ = fmt.Errorf("StoreSecretKeySMS-err%s", err.Error())
 		return false, fmt.Errorf("SDK错误")
 	}
-	utils.StoreSecretKeySMS("pub", keyEntryPub, ks, client.keyStoreFileName, []byte(user.KeyStorePwd))
+	utils.StoreSecretKeySMS("pub", keyEntryPub, ks, client.keyStoreFileName, []byte(client.keyStorePassWord))
 	if err != nil {
 		_ = fmt.Errorf("StoreSecretKeySMS-err%s", err.Error())
 		return false, fmt.Errorf("SDK错误")
@@ -163,21 +164,22 @@ func (client *SMSClient) GetSmsCipherText(label string) (string, error) {
 		log.Print(err)
 		return "", errors.New("sdk-获取私钥失败")
 	}
-	log.Printf("%#v", string(pri.PrivateKey))
+	//log.Printf("%#v", string(pri.PrivateKey))
 	pub, err := ks.GetPrivateKeyEntry("pub", []byte(client.keyStorePassWord))
 	if err != nil {
 		log.Print(err)
 		return "", errors.New("sdk-获取公钥失败")
 	}
-	log.Printf("%#v", string(pub.PrivateKey))
-	
+	//log.Printf("%#v", string(pub.PrivateKey))
+
 	//4.发送请求
 	if label == "" || len(pub.PrivateKey) == 0 {
 		return "", err
 	}
 	reqMap := map[string]string{
-		"label": label,
-		"pub":   base64.StdEncoding.EncodeToString(pub.PrivateKey),
+		"label":   label,
+		"version": "",
+		"pub":     base64.StdEncoding.EncodeToString(pub.PrivateKey),
 	}
 	credentialMap := map[string]string{
 		"token": tokenMap1["token"],
@@ -217,7 +219,7 @@ func (client *SMSClient) GetSmsCipherText(label string) (string, error) {
 		return "", err
 	}
 	if getCipherResp.Code != 0 {
-		fmt.Errorf("客户端获取密文失败，请重试")
+		fmt.Errorf("客户端获取密文失败，请重试%d", getCipherResp.Code)
 		return "", fmt.Errorf("客户端获取密文失败，请重试.%s", getCipherResp.Msg)
 	}
 	cipherText := getCipherResp.Data["ciphertext"]
