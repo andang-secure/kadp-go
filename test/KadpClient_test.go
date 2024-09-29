@@ -14,13 +14,13 @@ func TestKadp(t *testing.T) {
 	//token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEMQiHkMEfcYVm5LCUFDACn/4uYJNqpgHbrttZD1lDkyDuKsYM0MixYY2ZkImWaSB72eZX0pGbMKoOk5e4nAvIRcHEcQc8Lk/BmHMBRmK10wsziUiedJJB5rDzTEy2cC1/+v5f2gsHfXNjEY0aJmvegzuD2PKC72TTofMnvzJz2abUUafgTjCRnGe3x4iTN5ZKesS0JhbLLai/aJeKzdyq79J9VrY9WrZIb9CbEm4Ivsoi23z/8h+ZpNbPnRSrQcDp5Ad7EXJR30thzPxt9vzRTjElJ0bqppU9TQJDgRqKcF3Zx0nx2fynzTZabN/EKSbcw=="
 	//myClient, err := kadp.NewKADPClient(url, token, "QVSxoBH+SsUH9Vl3UC3D7YGV4tw5vaI7T/joivh/7FECvH06rcTwJvHjxvzdy8cD", "keystore.jks", "123456")
 
-	url := "https://192.168.0.192"
-	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEMQiHkMEfcYVm5LCUFDACn/4uYJNqpgHbrttZD1lDkyDuKsYM0MixYY2ZkImWaSB72eZX0pGbMKoOk5e4nAvIRcHEcQc8Lk/BmHMBRmK10wsziUiedJJB5rDzTEy2cC1/+v5f2gsHfXNjEY0aJmvegzuD2PKC72TTofMnvzJz2abUUafgTjCRnGe3x4iTN5ZKWyPkTDAgePhK8OQvIyF5gFGnFYd/Fu2RY76GnJFqftOZhM6fg5K/7dBMa1jKkMwt6FuG61Kq7VXgobTJ+TZt/MXO/AiI0Z9WS3BpaMMyHRF/NyYFsPM/SpfLTNFGdTt1orN5o/IpXm/c4IicLobzqByvKfTYeA7ee5cKA0BxLy1H3uYabALKDa+7A2DK0Q97Q=="
-	myClient, err := kadp.NewKADPClient(url, token, "l/Snh3ZdgjuslYfNJz//MpeBHa33plU9hgTSI0wKd27dIqrVJ/qLPuusSDjnMHr+", "keystore.jks", "123456")
+	//url := "https://192.168.0.192"
+	//token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEMQiHkMEfcYVm5LCUFDACn/4uYJNqpgHbrttZD1lDkyDuKsYM0MixYY2ZkImWaSB72eZX0pGbMKoOk5e4nAvIRcHEcQc8Lk/BmHMBRmK10wsziUiedJJB5rDzTEy2cC1/+v5f2gsHfXNjEY0aJmvegzuD2PKC72TTofMnvzJz2abUUafgTjCRnGe3x4iTN5ZKWyPkTDAgePhK8OQvIyF5gFGnFYd/Fu2RY76GnJFqftOZhM6fg5K/7dBMa1jKkMwt6FuG61Kq7VXgobTJ+TZt/MXO/AiI0Z9WS3BpaMMyHRF/NyYFsPM/SpfLTNFGdTt1orN5o/IpXm/c4IicLobzqByvKfTYeA7ee5cKA0BxLy1H3uYabALKDa+7A2DK0Q97Q=="
+	//myClient, err := kadp.NewKADPClient(url, token, "l/Snh3ZdgjuslYfNJz//MpeBHa33plU9hgTSI0wKd27dIqrVJ/qLPuusSDjnMHr+", "keystore.jks", "123456")
 
-	//url := "https://192.168.0.135"
-	//token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEGIr3RnQLyJOw/V3WgJRDWtvp4u+t85j0tjhpItzfPZsxD2X+aswNvd/UXEPvxU1daxJUCPZyeBXty1QVdycOUd6QNTBau0xytKFrfVDWbyMrNYFnfiH++ecgAU9kcw4S+KnZQ1fH+OyrWft4nkEsSXKzKWSo3V1H5OXAwsCohhD5eYPGhttprdgcJEOcFd1vt1+rzrr35gQ5Bq1IeqkN9D4H0CtqmZ+9PTIlsDvspUxvvhh1Z2gezc9gHIC9lvyzAOWS5q+hfiUPR1ZX4uoTVOoppRJRwtHwczNSAPrXN8uyCQSHhrJDduE4AHwwWGSrBltkSOLM/S1GrYH73nKel5NAAEAQs3CL5bWbdIXsG8dirS/1UiTD7IL1FwCFqyIPHVXXSSoPL4ASbwZYOZx2DAWctFQqTb/fohr0uqaVnn1"
-	//myClient, err := kadp.NewKADPClient(url, token, "N9YSgmHFvDoZXCmTulJ+LkR1q0b0ZDjIdzPJaj/+JATJfub9ganNzglsHakEwE3E", "keystore.jks", "123456")
+	url := "https://192.168.0.135:8390"
+	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEP/z+clh1zM1fMnHmIVmepiB8y6IQC2GTmUVA7bfhfsbreTWy59jhDOQ+EnFLSau0R4NOLZv7ZopZZ88B5KuIde6HR7h4NvY4Rm8xrSVb17K/YfoYS59P4LOBzMjB4aSk74Z7C5Kk1nCosQBN7LH6eBewZKUAquBi4iXtw3MNpR+SCOoJKzZiWFWPyffmsb9MLpEWC7+VqzFdiPMsvA781aO1LbuU4UA/VpOzwoXIVuw8UskLbjhLNOG0ot6mHUKjiohmxGtYAmnac/ylx8/Fus6n69HzGCxdpm/406VnPz1eiCQvW5Zc8CNrcBeZQCdutCFCxNyNmPBm4e0t8pcqqjxeDacaWMCLnp8cvPKalQppcpVCVOGqHjhLTKbRoCOzPbR9X3I7GBii3gEbQg3Fqb6pTSLSyG9+8vlauD11amb"
+	myClient, err := kadp.NewKADPClient(url, token, "Fps7T/jRIevtJih8GVcp02HmTWRIis//Fqd8LbbiOaPYI0tcSI1mCeh7ecInQC77", "keystore.jks", "123456")
 
 	if err != nil {
 		fmt.Println(err)

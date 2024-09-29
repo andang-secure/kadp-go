@@ -128,11 +128,8 @@ func (client *SMSClient) init() (bool, error) {
 	}
 	fmt.Println("------------", user.KeyStorePwd)
 	client.keyStorePassWord = user.KeyStorePwd
-	//client.keyStorePassWord = "shanghaiandanggongsi"
-	//user.KeyStorePwd = "shanghaiandanggongsi"
 	//3.认证通过开始创建keystore文件
 	ks := utils.ReadKeyStore(client.keyStoreFileName, []byte(client.keyStorePassWord))
-	//ks := utils.ReadKeyStore(client.keyStoreFileName, []byte(user.KeyStorePwd))
 
 	//4.生成公私钥对
 	pub, pri, errs := rsaKeyGenerator()
@@ -170,7 +167,6 @@ func (client *SMSClient) GetSmsCipherText(label string) (string, error) {
 		log.Print(err)
 		return "", errors.New("sdk-获取公钥失败")
 	}
-	//log.Printf("%#v", string(pub.PrivateKey))
 
 	//4.发送请求
 	if label == "" || len(pub.PrivateKey) == 0 {

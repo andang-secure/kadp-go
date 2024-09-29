@@ -6,15 +6,15 @@ import (
 )
 
 func main() {
-	domain := "https://192.168.0.135:8390"
-	appKey := "ad0101b2cf6612f4e52ba598c4f939f37f"
-	appSecret := "a0e447962336afda68f10a55f97e12b8"
-	label := "d"
+	//domain := "https://192.168.0.135:8390"
+	//appKey := "ad0101b2cf6612f4e52ba598c4f939f37f"
+	//appSecret := "a0e447962336afda68f10a55f97e12b8"
+	//label := "d"
 
-	//domain := "https://192.168.0.192"
-	//appKey := "coca"
-	//appSecret := "165338fdb9a878f9a85203661c69eb74"
-	//label := "zheng4"
+	domain := "https://192.168.0.192"
+	appKey := "coca"
+	appSecret := "165338fdb9a878f9a85203661c69eb74"
+	label := "d4"
 
 	keyStoreFileName := "sdk-keystore.jks"
 
