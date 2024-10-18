@@ -6,16 +6,23 @@ import (
 )
 
 func main() {
-	//domain := "https://192.168.0.135:8390"
-	//appKey := "ad0101b2cf6612f4e52ba598c4f939f37f"
-	//appSecret := "a0e447962336afda68f10a55f97e12b8"
-	//label := "d"
+	/*
+		domain := "https://192.168.0.135:8390"
+		appKey := "adc17d7141c6e02c09d917a56559102ec4"
+		appSecret := "2dfc48d7da9488b4597d050f24785780"
+		//appKey := "ad26a46e21bd3599232a635c5cad1b139f"
+		//appSecret := "a9c0700d1bbdc0e5770ab81e31deafb8"
+		label := "part2"
+	*/
 
 	domain := "https://192.168.0.192"
-	appKey := "coca"
-	appSecret := "165338fdb9a878f9a85203661c69eb74"
-	label := "d4"
-
+	//a
+	//appKey := "ad841c33e8fb243768ab014f064bb1e75e"
+	//appSecret := "a7620337e87301b17513a63f6eb8d1fe"
+	//sms
+	appKey := "adabb4bea1296ecb0e71c909b628c8d563"
+	appSecret := "bebc1a6b366433694829d3be36d0ff42"
+	label := "part"
 	keyStoreFileName := "sdk-keystore.jks"
 
 	client, err := kadp.NewSMSClient(domain, appKey, appSecret, keyStoreFileName, "")

@@ -7,7 +7,7 @@ import (
 )
 
 func TestNewSMSClient(t *testing.T) {
-	domain := "https://192.168.0.135:8190"
+	domain := "https://192.168.0.135:8390"
 	appKey := "admin"
 	appSecret := "123456"
 	keyStoreFileName := "sdk-keystore.jks"
