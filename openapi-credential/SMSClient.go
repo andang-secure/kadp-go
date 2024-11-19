@@ -13,17 +13,10 @@ import (
 )
 
 type SMSClient struct {
-	//domain           string
-	//credential       string
-	//clientCredential string
-	//version          string
 	labelCipherText map[string]string
 	keyMap          map[string]string
 	//keyStore         keystore.KeyStore
-	//keyStoreFileName string
-	//keyStorePassWord string
 	authStatus bool
-	//sessionKey       []byte
 	//认证所需参数
 	appKey           string
 	appSecret        string
@@ -34,6 +27,7 @@ type SMSClient struct {
 	domain           string //域名
 	keyStorePassWord string
 	authToken        string
+	registerToken    string
 }
 
 var keyPair1 = make(map[string]string)
@@ -41,7 +35,7 @@ var keyPair1 = make(map[string]string)
 var tokenMap1 = make(map[string]string)
 
 // NewSMSClient 初始化SMS
-func NewSMSClient(domain, appKey, appSecret, keyStoreFileName, keyStorePassWord string) (*SMSClient, error) {
+func NewSMSClient(domain, appKey, appSecret, keyStoreFileName, keyStorePassWord, registerToken string) (*SMSClient, error) {
 	//logger.DailyLogger(logFileDir, logFileName)
 
 	SMSClient := &SMSClient{
@@ -49,6 +43,7 @@ func NewSMSClient(domain, appKey, appSecret, keyStoreFileName, keyStorePassWord 
 		appSecret:        appSecret,
 		domain:           domain,
 		keyStoreFileName: keyStoreFileName,
+		registerToken:    registerToken,
 		//keyStore: utils.ReadKeyStore(keyStoreFileName, []byte(keyStorePassWord)),
 		//version:          "1.0",
 		//label:            "",
@@ -67,6 +62,27 @@ func NewSMSClient(domain, appKey, appSecret, keyStoreFileName, keyStorePassWord 
 
 func (client *SMSClient) authClient(addr, system, ip string) (interface{}, error) {
 	if addr != "" && system != "" && ip != "" {
+
+		/*
+			//先进行注册令牌验证
+			reqMap1 := map[string]string{
+				"mac_addr": addr,
+				"ip":       ip,
+				"system":   system,
+				"token":    client.registerToken,
+			}
+			resultToken, err := utils.AuthSendRequest("POST", client.domain+"/v1/ksp/open_api/kadp/register", reqMap1)
+			if err != nil {
+				return nil, err
+			}
+			resultMap := resultToken.(map[string]interface{})
+			fmt.Println(resultMap)
+			if resultMap["code"].(float64) != 0 {
+				fmt.Errorf("客户端注册令牌无效，请重试")
+				return false, fmt.Errorf("客户端注册令牌无效，请重试")
+			}
+		*/
+		//2.开始登录
 		reqMap := map[string]string{
 			"mac_addr":  addr,
 			"ip":        ip,

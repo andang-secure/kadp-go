@@ -11,8 +11,9 @@ func TestNewSMSClient(t *testing.T) {
 	appKey := "admin"
 	appSecret := "123456"
 	keyStoreFileName := "sdk-keystore.jks"
+	registerToken := "TxfzmhSA+q7yw6Fd9w63PA4FiJm+iii5/FyEzGyOrjSz3N7KOsfYvNLUQDuEOTLX"
 
-	client, err := kadp.NewSMSClient(domain, appKey, appSecret, keyStoreFileName, "")
+	client, err := kadp.NewSMSClient(domain, appKey, appSecret, keyStoreFileName, "", registerToken)
 	if err != nil {
 		t.Errorf("Failed to create SMSClient: %v", err)
 	}

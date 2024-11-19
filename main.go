@@ -6,26 +6,21 @@ import (
 )
 
 func main() {
-	/*
-		domain := "https://192.168.0.135:8390"
-		appKey := "adc17d7141c6e02c09d917a56559102ec4"
-		appSecret := "2dfc48d7da9488b4597d050f24785780"
-		//appKey := "ad26a46e21bd3599232a635c5cad1b139f"
-		//appSecret := "a9c0700d1bbdc0e5770ab81e31deafb8"
-		label := "part2"
-	*/
 
-	domain := "https://192.168.0.192"
-	//a
-	//appKey := "ad841c33e8fb243768ab014f064bb1e75e"
-	//appSecret := "a7620337e87301b17513a63f6eb8d1fe"
-	//sms
-	appKey := "adabb4bea1296ecb0e71c909b628c8d563"
-	appSecret := "bebc1a6b366433694829d3be36d0ff42"
-	label := "part"
+	domain := "https://192.168.0.135:8390"
+	appKey := "adc17d7141c6e02c09d917a56559102ec4"
+	appSecret := "2dfc48d7da9488b4597d050f24785780"
+	registerToken := "TxfzmhSA+q7yw6Fd9w63PA4FiJm+iii5/FyEzGyOrjSz3N7KOsfYvNLUQDuEOTLX"
+	label := "sq02"
+
+	//domain := "https://192.168.0.192"
+	////cj
+	//appKey := "ad6612922dbdc2169b31be8c22f28350fa"
+	//appSecret := "b0e6d63f978418e0da4214912ddd4a9f"
+	//label := "df"
 	keyStoreFileName := "sdk-keystore.jks"
 
-	client, err := kadp.NewSMSClient(domain, appKey, appSecret, keyStoreFileName, "")
+	client, err := kadp.NewSMSClient(domain, appKey, appSecret, keyStoreFileName, "", registerToken)
 	if err != nil {
 		fmt.Printf("Failed to create SMSClient: %v", err)
 		return
