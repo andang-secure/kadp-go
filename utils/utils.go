@@ -11,7 +11,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
-	"log"
 	"sort"
 	"strings"
 )
@@ -73,7 +72,7 @@ func NewRequest() (req *Request) {
 func SortJSONKeysByASCII(jsonStr string) (reqCont string, err error) {
 	// 解析 JSON 数据到 map
 	var dataMap map[string]interface{}
-	log.Println("---------------------body字符串json--------", jsonStr)
+	//log.Println("---------------------body字符串json--------", jsonStr)
 	err = json.Unmarshal([]byte(jsonStr), &dataMap)
 	if err != nil {
 		return "", fmt.Errorf("error unmarshaling JSON: %w", err)

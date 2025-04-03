@@ -142,7 +142,7 @@ func (client *SMSClient) init() (bool, error) {
 		log.Println("解析token文件失败", err)
 		return false, fmt.Errorf("解析token文件失败，请重试")
 	}
-	fmt.Println("------------", user.KeyStorePwd)
+
 	client.keyStorePassWord = user.KeyStorePwd
 	//3.认证通过开始创建keystore文件
 	ks := utils.ReadKeyStore(client.keyStoreFileName, []byte(client.keyStorePassWord))

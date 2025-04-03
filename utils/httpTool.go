@@ -117,7 +117,7 @@ func SendSdkAuthRequest(method, url string, header map[string]string, params int
 		return "", errors.New("组织签名字符串 error")
 	}
 
-	logger.Info("签名字符串：", strToSign)
+	//logger.Info("签名字符串：", strToSign)
 
 	//3.私钥签名参数
 	signStrBase64, err := SignString(strToSign, pri)
@@ -132,9 +132,9 @@ func SendSdkAuthRequest(method, url string, header map[string]string, params int
 		req.Header.Set(k, v)
 	}
 	req.Header.Set("Sign-Header", signStrBase64)
-	logger.Info("********************参数验签*****************************")
-	logger.Info("r=", req)
-	logger.Info("*************************************************")
+	//logger.Info("********************参数验签*****************************")
+	//logger.Info("r=", req)
+	//logger.Info("*************************************************")
 	response, err := client.Do(req)
 	if err != nil {
 		return nil, err

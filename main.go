@@ -8,10 +8,10 @@ import (
 func main() {
 
 	domain := "https://192.168.0.135:8390"
-	appKey := "adc17d7141c6e02c09d917a56559102ec4"
-	appSecret := "2dfc48d7da9488b4597d050f24785780"
-	registerToken := "TxfzmhSA+q7yw6Fd9w63PA4FiJm+iii5/FyEzGyOrjSz3N7KOsfYvNLUQDuEOTLX"
-	label := "sq02"
+	appKey := "ad68408bb2dd8f235df8250beeaed7de62"
+	appSecret := "a8c0cfa369742a1012cf184934956912"
+	registerToken := "Aa/5qMa9MCcFAE1x7RR83kR1oIJKmDSFAEsZyBl75vaDtjFvqtrUD8eAAVrFK9Xf"
+	label := "asdaa"
 
 	//domain := "https://192.168.0.192"
 	////cj
