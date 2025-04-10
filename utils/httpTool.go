@@ -111,9 +111,9 @@ func SendSdkAuthRequest(method, url string, header map[string]string, params int
 	headerReq.Headers["x-ksp-acccesskeyid"] = pub //base64编码
 	headerReq.Headers["x-ksp-apiname"] = apiName
 
-	strToSign, _err := GetStringToSign(method, headerReq.Headers)
-	if _err != nil {
-		logger.Error("组织签名字符串 error:", _err)
+	strToSign, err := GetStringToSign(method, headerReq.Headers)
+	if err != nil {
+		logger.Error("组织签名字符串 error:", err)
 		return "", errors.New("组织签名字符串 error")
 	}
 
@@ -121,8 +121,8 @@ func SendSdkAuthRequest(method, url string, header map[string]string, params int
 
 	//3.私钥签名参数
 	signStrBase64, err := SignString(strToSign, pri)
-	if _err != nil {
-		logger.Error("私钥签名 error:", _err)
+	if err != nil {
+		logger.Error("私钥签名 error:", err)
 		return "", errors.New("私钥签名 error")
 	}
 	for k, v := range header {

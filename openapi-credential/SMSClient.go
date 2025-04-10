@@ -28,6 +28,7 @@ type SMSClient struct {
 	keyStorePassWord string
 	authToken        string
 	registerToken    string
+	domainId         int
 }
 
 var keyPair1 = make(map[string]string)
@@ -35,13 +36,14 @@ var keyPair1 = make(map[string]string)
 var tokenMap1 = make(map[string]string)
 
 // NewSMSClient 初始化SMS
-func NewSMSClient(domain, appKey, appSecret, keyStoreFileName, keyStorePassWord, registerToken string) (*SMSClient, error) {
+func NewSMSClient(url string, domain int, appKey, appSecret, keyStoreFileName, registerToken string) (*SMSClient, error) {
 	//logger.DailyLogger(logFileDir, logFileName)
 
 	SMSClient := &SMSClient{
 		appKey:           appKey,
 		appSecret:        appSecret,
-		domain:           domain,
+		domain:           url,
+		domainId:         domain,
 		keyStoreFileName: keyStoreFileName,
 		registerToken:    registerToken,
 		//keyStore: utils.ReadKeyStore(keyStoreFileName, []byte(keyStorePassWord)),
@@ -89,7 +91,7 @@ func (client *SMSClient) authClient(addr, system, ip string) (interface{}, error
 			"system":    system,
 			"appid":     client.appKey,
 			"appsecret": client.appSecret,
-			"domain":    strconv.Itoa(1),
+			"domain":    strconv.Itoa(client.domainId),
 		}
 		result, err := utils.AuthSendRequest("POST", client.domain+"/v1/ksp/open_api/login", reqMap)
 		if err != nil {
@@ -108,11 +110,12 @@ func (client *SMSClient) init() (bool, error) {
 		return false, fmt.Errorf("获取系统失败: %v", err)
 	}
 
-	system, err := utils.GetOsInfo()
-	if err != nil {
-		logger.Error("获取系统失败")
-		return false, fmt.Errorf("获取系统失败: %v", err)
-	}
+	//system, err := utils.GetOsInfo()
+	//if err != nil {
+	//	logger.Error("获取系统失败")
+	//	return false, fmt.Errorf("获取系统失败: %v", err)
+	//}
+	system := "windows"
 
 	ip, err := utils.GetOutBoundIP()
 	if err != nil {

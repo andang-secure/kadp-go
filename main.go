@@ -7,7 +7,8 @@ import (
 
 func main() {
 
-	domain := "https://192.168.0.135:8390"
+	url := "https://192.168.0.135:8390"
+	domain := 1
 	appKey := "ad68408bb2dd8f235df8250beeaed7de62"
 	appSecret := "a8c0cfa369742a1012cf184934956912"
 	registerToken := "Aa/5qMa9MCcFAE1x7RR83kR1oIJKmDSFAEsZyBl75vaDtjFvqtrUD8eAAVrFK9Xf"
@@ -20,7 +21,7 @@ func main() {
 	//label := "df"
 	keyStoreFileName := "sdk-keystore.jks"
 
-	client, err := kadp.NewSMSClient(domain, appKey, appSecret, keyStoreFileName, "", registerToken)
+	client, err := kadp.NewSMSClient(url, domain, appKey, appSecret, keyStoreFileName, registerToken)
 	if err != nil {
 		fmt.Printf("Failed to create SMSClient: %v", err)
 		return
