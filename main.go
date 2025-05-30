@@ -7,12 +7,23 @@ import (
 
 func main() {
 
-	url := "https://192.168.0.135:8390"
+	//url := "https://ksp.andang.cn"
+	//domain := 1
+	////coca
+	//appKey := "ad68408bb2dd8f235df8250beeaed7de62"
+	//appSecret := "b5ce2c51909959d928ca5b0de13f63e1"
+	////cxzd
+	////appKey := "adf3e4e1780036e9d681179ff60df05adf"
+	////appSecret := "ac255974a32e24206493815e1f363805"
+	//registerToken := "Aa/5qMa9MCcFAE1x7RR83kR1oIJKmDSFAEsZyBl75vaDtjFvqtrUD8eAAVrFK9Xf"
+	//label := "test-01"
+
+	url := "https://192.168.0.130:8390"
 	domain := 1
-	appKey := "ad68408bb2dd8f235df8250beeaed7de62"
-	appSecret := "a8c0cfa369742a1012cf184934956912"
+	appKey := "ad69d9f4c549b061f38f9debbc718f9e2c"
+	appSecret := "38bb2231cae51896d38635a5e32b7c50"
 	registerToken := "Aa/5qMa9MCcFAE1x7RR83kR1oIJKmDSFAEsZyBl75vaDtjFvqtrUD8eAAVrFK9Xf"
-	label := "asdaa"
+	label := "QIANG"
 
 	//domain := "https://192.168.0.192"
 	////cj
