@@ -17,3 +17,7 @@ type KmsAuthRes struct {
 type AuthToken struct {
 	Token string `json:"token"`
 }
+type KekData struct {
+	Cont    string `json:"cont"`
+	Version string `json:"version"`
+}

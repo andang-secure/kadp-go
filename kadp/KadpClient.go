@@ -1,6 +1,7 @@
 package kadp
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/andang-secure/kadp-go/configs"
@@ -130,6 +131,8 @@ func (client *KadpClient) init() (bool, error) {
 		//暂未有sm2实现
 	}
 
+	publicKey = base64.StdEncoding.EncodeToString([]byte(publicKey))
+
 	// 构造请求参数
 	authReq := order.AuthReq{
 		Alg:     configs.Alg,
@@ -169,6 +172,15 @@ func (client *KadpClient) init() (bool, error) {
 	if authRes.Code != 0 {
 		return false, fmt.Errorf("ksm server err: %s", authRes.Msg) // 修正错误包装方式
 	}
+
+	//decodeToken, err := base64.StdEncoding.DecodeString(authRes.Data.Token)
+	//if err != nil {
+	//	return false, fmt.Errorf("token base64 decode err")
+	//}
+	//decryptToken, err := aes_alg.AesCBCDecryptNoPad(decodeToken, []byte(configs.ANALYSIS_KEY), []byte(configs.ANALYSIS_KEY))
+	//if err != nil {
+	//	return false, fmt.Errorf("解密密钥失败: %w", err)
+	//}
 	client.keyProcessor = &keyProcessor{
 		privateKey: privateKey,
 		domain:     client.config.Domain,
@@ -193,13 +205,16 @@ func (client *KadpClient) CreateCipherKey(length int, label string) ([]byte, err
 		return nil, errors.New("key length must be 16, 24, or 32")
 	}
 	kek, err := utils.NewKeyStoreObj().RetrieveSecretKey(label)
-	if err != nil || kek == nil {
+	if err != nil && kek == nil {
+		logger.Debug("* CreateCipherKey", len(kek))
+
 		kek, err = client.keyProcessor.fetchAndCacheKek(label, length)
 		if err != nil {
 			return nil, fmt.Errorf("获取kek密钥失败: %w", err)
 		}
 	}
 
+	logger.Debug("* CreateCipherKey", len(kek))
 	randomBytes, err := utils.GenerateRandomBytes(length)
 	if err != nil {
 		return nil, err
@@ -209,6 +224,7 @@ func (client *KadpClient) CreateCipherKey(length int, label string) ([]byte, err
 	if err != nil {
 		return nil, fmt.Errorf("加密dek密钥失败: %w", err)
 	}
+	logger.Debug("* 创建密文密钥", len(enyKey))
 	return enyKey, nil
 }
 

@@ -15,9 +15,9 @@ func TestKadp(t *testing.T) {
 	//myClient, err := kadp.NewKADPClient(url, token, "QVSxoBH+SsUH9Vl3UC3D7YGV4tw5vaI7T/joivh/7FECvH06rcTwJvHjxvzdy8cD", "keystore.jks", "123456")
 
 	logger.SetLevel(logger.DebugLevel)
-	url := "https://192.168.0.192"
-	RegisterToken := "QsRkaK04CubMKf9siuCqTw+Poamb29zujiJincm+wr2+E7ILG5WN9S3YH6x4gacD"
-	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEGIr3RnQLyJOw/V3WgJRDWtvp4u+t85j0tjhpItzfPZsxD2X+aswNvd/UXEPvxU1dclijOAOKNgpekBG1xVHgHRFUlKapFGg7ZDjgZSC7LOaloyhy2WPVcPkrPiB4WIQx4p/14ulzFl59zg3oa1QeV0X94cZuN83Du0kRqCQo5jXBQHHkKyjR+weKTcObCC1zBHjh7QYjenFEp4EDBRxZQ6i+J5xG0DFguu9Qe7dgSyznrD1nXVdMCkBW1twW7XwwCGumVAjE8fe4tsrzH79hBH9U8EmZJxKGZVFofaj+jZLHYBufW5JR4xvWBkQgnkjlF/clLc3ugQMXjoclehyALKFadE7g2XKQHHsQf1H5nRHnuvpJzmEjDbVGNyUgtVH68WHLTSCxhoEKomHWRiC4st0WkfstV6bog4oMPI758LriMK3DWxb/i5nIa3ynJBzDG1zFQYBZLlxrwp9Cb8TmZM="
+	url := "http://192.168.0.194:8190"
+	RegisterToken := "IAx//zMaqjGzirfrS+09YnHqVrf/nZVQ5K+s3rnXqGhjDZ2wiTZZDJ13YgCtWDSC"
+	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaW5mbyI6IntcInVzZXJfaWRcIjo1NTMsXCJkb21haW5faWRcIjoxLFwiYWNjb3VudFwiOlwiYWRtaW5cIixcIlBhc3N3b3JkXCI6XCJlMjAxNjVkZDRiNWI2Y2NjZDM2YzBmZDA1YTQyYWJjMVwiLFwiZ3JvdXBzXCI6WzEsNSwyLDMsNyw2LDQsMTAsMTYsMTcsMTZdLFwiZ3JvdXBzX2tleVwiOm51bGwsXCJwcmlcIjpcIlwiLFwicHViXCI6XCJcIixcInNlc3Npb25fa2V5XCI6XCJcIn0ifQ.03JinUyxem-t4al_k7WQIem4kgqWyWo-hug8ogHRyHU"
 	myClient, err := kadp.NewKADPClient(&configs.KmsConfig{
 		Domain:        url,
 		Credential:    token,
@@ -31,7 +31,7 @@ func TestKadp(t *testing.T) {
 	//token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEP/z+clh1zM1fMnHmIVmepiB8y6IQC2GTmUVA7bfhfsbreTWy59jhDOQ+EnFLSau0R4NOLZv7ZopZZ88B5KuIde6HR7h4NvY4Rm8xrSVb17K/YfoYS59P4LOBzMjB4aSk74Z7C5Kk1nCosQBN7LH6eBewZKUAquBi4iXtw3MNpR+SCOoJKzZiWFWPyffmsb9MLpEWC7+VqzFdiPMsvA781aO1LbuU4UA/VpOzwoXIVuw8UskLbjhLNOG0ot6mHUKjiohmxGtYAmnac/ylx8/Fus6n69HzGCxdpm/406VnPz1eiCQvW5Zc8CNrcBeZQCdutCFCxNyNmPBm4e0t8pcqqjxeDacaWMCLnp8cvPKalQppcpVCVOGqHjhLTKbRoCOzPbR9X3I7GBii3gEbQg3Fqb6pTSLSyG9+8vlauD11amb"
 	//myClient, err := kadp.NewKADPClient(url, token, "Fps7T/jRIevtJih8GVcp02HmTWRIis//Fqd8LbbiOaPYI0tcSI1mCeh7ecInQC77", "keystore.jks", "123456")
 
-	label := "kadp-1"
+	label := "s1"
 	key, err := myClient.CreateCipherKey(16, label)
 	if err != nil {
 		t.Error(err)
@@ -74,14 +74,14 @@ func TestKadp(t *testing.T) {
 	fmt.Println("FPE明文：" + decipher)
 
 	//AES
-	data := "微信文档"
-	iv := "12345678912345678"
+	data := "1234567891234567"
+	iv := "1234567891234567"
 	encipher, err := myClient.Encipher(&kadp.EncipherRequest{
 		Plaintext: []byte(data),
 		CipherKey: key,
 		Algorithm: kadp.AES,
 		Mode:      kadp.ECB,
-		Padding:   kadp.PKCS5Padding,
+		Padding:   kadp.NoPadding,
 		Label:     label,
 		IV:        iv,
 	})
@@ -95,7 +95,7 @@ func TestKadp(t *testing.T) {
 		CipherKey:  key,
 		Algorithm:  kadp.AES,
 		Mode:       kadp.ECB,
-		Padding:    kadp.PKCS5Padding,
+		Padding:    kadp.NoPadding,
 		Label:      label,
 		IV:         iv,
 	})

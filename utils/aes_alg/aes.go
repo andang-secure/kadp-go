@@ -42,7 +42,6 @@ func AesCBCDecrypt(cipherText, key, iv []byte) ([]byte, error) {
 	decrypt := cipher.NewCBCDecrypter(c, iv)
 	plainText := make([]byte, len(cipherText))
 	decrypt.CryptBlocks(plainText, cipherText)
-	plainText = getUnPaddingData(plainText)
 	return plainText, nil
 }
 func getPaddingData(origData []byte, blockSize int) []byte {
@@ -72,4 +71,20 @@ func pkcs5UnPadding(src []byte) []byte {
 		return nil
 	}
 	return src[:(length - unPadding)]
+}
+
+func AesCBCDecryptNoPad(cipherText, key, iv []byte) ([]byte, error) {
+	cipherTextLen := len(cipherText)
+	if cipherTextLen%BlockSize != 0 {
+		return nil, errors.New("input not full blocks")
+	}
+
+	c, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	decrypt := cipher.NewCBCDecrypter(c, iv)
+	plainText := make([]byte, len(cipherText))
+	decrypt.CryptBlocks(plainText, cipherText)
+	return plainText, nil
 }

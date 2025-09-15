@@ -1,7 +1,7 @@
 package configs
 
 const (
-	KeystoreFileName = "kadp.jks"
+	KeystoreFileName = "kadp1.jks"
 	KeystorePassword = "uF1jG4lH6vU6cZ9b"
 )
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/andang-secure/kadp-go/configs"
 	"github.com/pavlo-v-chernykh/keystore-go/v4"
+	logger "github.com/sirupsen/logrus"
 	"log"
 	"os"
 	"sync"
@@ -75,13 +76,12 @@ func (k *KeyStoreObj) RetrieveSecretKey(label string) ([]byte, error) {
 	if k.cachingKeyStore == nil {
 		k.init()
 	}
-	if k.cachingKeyStore.IsPrivateKeyEntry(label) {
-		return nil, fmt.Errorf("no such label")
-	}
+
 	keyEntry, err := k.cachingKeyStore.GetPrivateKeyEntry(label, []byte(configs.KEY))
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve key entry: %v", err)
 	}
+	logger.Debug("key length:", len(keyEntry.PrivateKey))
 
 	return keyEntry.PrivateKey, nil
 }
@@ -127,6 +127,7 @@ func (tm *TaskManager) ScheduleDeletionWithContext(cachingKeyStore *keystore.Key
 		select {
 		case <-timer.C:
 			cachingKeyStore.DeleteEntry(alias)
+			log.Printf("Deleted entry: %s", alias)
 		case <-ctx.Done():
 			log.Printf("Deletion task for %s was cancelled", alias)
 		}

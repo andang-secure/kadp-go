@@ -31,6 +31,7 @@ func rsaKeyGenerator() (publicKeyBase64, privateKeyBase64 string, err error) {
 		Type:  "PUBLIC KEY",
 		Bytes: publicKeyDER,
 	}
+
 	// 将公钥PEM块编码为字符串
 	encodedPublicKey := string(pem.EncodeToMemory(publicKeyBlock))
 
