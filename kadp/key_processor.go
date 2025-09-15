@@ -18,7 +18,7 @@ type keyProcessor struct {
 
 func (k *keyProcessor) fetchAndCacheKek(label string, length int) ([]byte, error) {
 
-	result, err := utils.SendRequest(configs.POST, k.domain+configs.KEK_URL, tokenMap, order.KekReq{
+	result, err := utils.SendRequest(configs.POST, k.domain+configs.KEK_URL, k.header, order.KekReq{
 		Label:  label,
 		Length: length,
 	})

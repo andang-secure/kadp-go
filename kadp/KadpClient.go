@@ -7,7 +7,6 @@ import (
 	"github.com/andang-secure/kadp-go/order"
 	"github.com/andang-secure/kadp-go/utils"
 	"github.com/mitchellh/mapstructure"
-	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	logger "github.com/sirupsen/logrus"
 	"runtime"
 )
@@ -32,33 +31,23 @@ type KadpImpl interface {
 }
 
 type KadpClient struct {
-	config          *configs.KmsConfig
-	header          map[string]string
-	version         string
-	labelCipherText map[string]string
-	keyMap          map[string]string
-	keyStore        keystore.KeyStore
-	authStatus      bool
-	privateKey      string
-	keyProcessor    *keyProcessor
+	config       *configs.KmsConfig
+	header       map[string]string
+	version      string
+	authStatus   bool
+	keyProcessor *keyProcessor
 }
-
-var tokenMap = make(map[string]string)
 
 // NewKADPClient 初始化
 func NewKADPClient(config *configs.KmsConfig) (*KadpClient, error) {
-	//logger.DailyLogger(logFileDir, logFileName)
 
 	KADPClient := &KadpClient{
 		config: config,
-		//keyStore: utils.ReadKeyStore(configs.KeystoreFileName, []byte(configs.KeystorePassword)),
 		header: map[string]string{
 			configs.TOKEN: config.Credential,
 		},
 	}
 	var err error
-	KADPClient.labelCipherText = make(map[string]string, 0)
-	KADPClient.keyMap = make(map[string]string, 0)
 	KADPClient.authStatus, err = KADPClient.init()
 	if err != nil {
 		return nil, err
