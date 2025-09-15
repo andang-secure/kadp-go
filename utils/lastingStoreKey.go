@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"github.com/andang-secure/kadp-go/configs"
 	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	logger "github.com/sirupsen/logrus"
 	"log"
@@ -9,30 +10,30 @@ import (
 	"time"
 )
 
-func ReadKeyStore(filename string, password []byte) keystore.KeyStore {
+func ReadKeyStore() keystore.KeyStore {
 
 	ks := keystore.New()
 
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
+	if _, err := os.Stat(configs.KeystoreFileName); os.IsNotExist(err) {
 		// 文件不存在，则创建新的 KeyStore 并保存到文件
-		CreateKeyStore(ks, filename, password)
+		CreateKeyStore(ks)
 		logger.Debug("keystore判定不存在,开始创建keystore文件")
 	}
 
-	f, err := os.Open(filename)
+	f, err := os.Open(configs.KeystoreFileName)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer f.Close()
 
-	if err = ks.Load(f, password); err != nil {
-		log.Fatal(err)
+	if err = ks.Load(f, []byte(configs.KeystorePassword)); err != nil {
+		panic(err)
 	}
 	return ks
 }
 
-func CreateKeyStore(ks keystore.KeyStore, filename string, password []byte) {
-	f, err := os.Create(filename)
+func CreateKeyStore(ks keystore.KeyStore) {
+	f, err := os.Create(configs.KeystoreFileName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -43,9 +44,9 @@ func CreateKeyStore(ks keystore.KeyStore, filename string, password []byte) {
 		}
 	}()
 
-	err = ks.Store(f, password)
+	err = ks.Store(f, []byte(configs.KeystorePassword))
 	if err != nil {
-		log.Fatal(err) //nolint: gocritic
+		panic(err)
 	}
 }
 
@@ -86,8 +87,8 @@ func Zeroing(buf []byte) {
 	}
 }
 
-func StoreSecretKey(alias string, keyEntry keystore.PrivateKeyEntry, ks keystore.KeyStore, filename string, password []byte) {
-	f, err := os.Create(filename)
+func StoreSecretKey(alias string, keyEntry keystore.PrivateKeyEntry, ks keystore.KeyStore) {
+	f, err := os.Create(configs.KeystoreFileName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -97,12 +98,12 @@ func StoreSecretKey(alias string, keyEntry keystore.PrivateKeyEntry, ks keystore
 			log.Fatal(err)
 		}
 	}()
-	err = ks.SetPrivateKeyEntry(alias, keyEntry, []byte("shanghaiandanggongsi"))
+	err = ks.SetPrivateKeyEntry(alias, keyEntry, []byte(configs.KEY))
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	err = ks.Store(f, password)
+	err = ks.Store(f, []byte(configs.KeystorePassword))
 
 	if err != nil {
 		log.Fatal(err) //nolint: gocritic

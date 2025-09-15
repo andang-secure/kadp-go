@@ -13,92 +13,79 @@ import (
 )
 
 // aseCbcNoPadEncrypt 使用AES-CBC/NoPadding模式加密数据
-func aseCbcNoPadEncrypt(plaintext, iv []byte, key string, algorithm Symmetry) (string, error) {
+func aseCbcNoPadEncrypt(req *EncipherRequest, key []byte) (string, error) {
 
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-
-	if err != nil {
-		return "", err
-	}
-	var block cipher.Block
-
-	switch algorithm {
+	var (
+		block cipher.Block
+		err   error
+	)
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 
 	if err != nil {
 		return "", err
 	}
 
-	ciphertext := make([]byte, len(plaintext))
+	ciphertext := make([]byte, len(req.Plaintext))
 
-	mode := cipher.NewCBCEncrypter(block, iv)
-	mode.CryptBlocks(ciphertext, plaintext)
+	mode := cipher.NewCBCEncrypter(block, []byte(req.IV))
+	mode.CryptBlocks(ciphertext, req.Plaintext)
 
 	cipherTextBase64 := base64.StdEncoding.EncodeToString(ciphertext)
 	return cipherTextBase64, nil
 }
 
 // aseCbcNoPadDecrypt  使用AES-CBC/NoPadding模式解密数据
-func aseCbcNoPadDecrypt(ciphertext string, key string, iv []byte, algorithm Symmetry) (string, error) {
-	textByte, err := base64.StdEncoding.DecodeString(ciphertext)
+func aseCbcNoPadDecrypt(req *DecryptRequest, key []byte) ([]byte, error) {
+	textByte, err := base64.StdEncoding.DecodeString(req.Ciphertext)
 	if err != nil {
-		return "", err
-	}
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	var block cipher.Block
+	var (
+		block cipher.Block
+	)
 
-	switch algorithm {
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	plaintext := make([]byte, len(textByte))
 
-	mode := cipher.NewCBCDecrypter(block, iv)
+	mode := cipher.NewCBCDecrypter(block, []byte(req.IV))
 	mode.CryptBlocks(plaintext, textByte)
 
-	//// 去除填充数据
-	//padding := int(plaintext[len(plaintext)-1])
-	//plaintext = plaintext[:len(plaintext)-padding]
-
-	return string(plaintext), nil
+	return plaintext, nil
 }
 
 // aseCbcPaddingEncrypt 使用AES-CBC/PKCS5Padding模式加密数据
-func aseCbcPaddingEncrypt(plaintext, iv []byte, key string, padding Padding, algorithm Symmetry) (string, error) {
-
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
-	}
-
-	var block cipher.Block
-
-	switch algorithm {
+func aseCbcPaddingEncrypt(req *EncipherRequest, key []byte) (string, error) {
+	var (
+		block cipher.Block
+		err   error
+	)
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 
 	if err != nil {
@@ -107,54 +94,50 @@ func aseCbcPaddingEncrypt(plaintext, iv []byte, key string, padding Padding, alg
 
 	blockSize := block.BlockSize()
 
-	switch padding {
+	switch req.Padding {
 	case PKCS5Padding:
-		plaintext = pKCS5Padding(plaintext, blockSize)
+		req.Plaintext = pKCS5Padding(req.Plaintext, blockSize)
 	case PKCS7Padding:
-		plaintext = pKCS7Padding(plaintext, blockSize)
+		req.Plaintext = pKCS7Padding(req.Plaintext, blockSize)
 	case ISO10126Padding:
-		plaintext = iSO10126Padding(plaintext)
+		req.Plaintext = iSO10126Padding(req.Plaintext)
 	case ZeroPadding:
-		plaintext = zeroPadding(plaintext, blockSize)
+		req.Plaintext = zeroPadding(req.Plaintext, blockSize)
 	}
 
-	blockMode := cipher.NewCBCEncrypter(block, iv)
-	ciphertext := make([]byte, len(plaintext))
-	blockMode.CryptBlocks(ciphertext, plaintext)
+	blockMode := cipher.NewCBCEncrypter(block, []byte(req.IV))
+	ciphertext := make([]byte, len(req.Plaintext))
+	blockMode.CryptBlocks(ciphertext, req.Plaintext)
 	cipherTextBase64 := base64.StdEncoding.EncodeToString(ciphertext)
 
 	return cipherTextBase64, nil
 }
 
 // aseCbcPaddingDecrypt 使用AES-CBC/PKCS5Padding模式解密数据
-func aseCbcPaddingDecrypt(ciphertext, key string, iv []byte, padding Padding, algorithm Symmetry) (string, error) {
-	textByte, err := base64.StdEncoding.DecodeString(ciphertext)
+func aseCbcPaddingDecrypt(req *DecryptRequest, key []byte) ([]byte, error) {
+	textByte, err := base64.StdEncoding.DecodeString(req.Ciphertext)
 	if err != nil {
-		return "", err
-	}
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	var block cipher.Block
 
-	switch algorithm {
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	blockMode := cipher.NewCBCDecrypter(block, iv)
+	blockMode := cipher.NewCBCDecrypter(block, []byte(req.IV))
 	origData := make([]byte, len(textByte))
 	blockMode.CryptBlocks(origData, textByte)
-	switch padding {
+	switch req.Padding {
 	case PKCS5Padding:
 		origData = pKCS5UnPadding(origData)
 	case PKCS7Padding:
@@ -165,37 +148,33 @@ func aseCbcPaddingDecrypt(ciphertext, key string, iv []byte, padding Padding, al
 		origData = zeroUnPadding(origData)
 	}
 
-	return string(origData), nil
+	return origData, nil
 }
 
 // aesCtrNoPadEncrypt 使用AES-CTR/PKCS5Encrypt模式加密数据
-func aesCtrNoPadEncrypt(plainText, iv []byte, key string, algorithm Symmetry) (string, error) {
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
-	}
+func aesCtrNoPadEncrypt(req *EncipherRequest, key []byte) (string, error) {
+	var (
+		block cipher.Block
+		err   error
+	)
 
-	var block cipher.Block
-
-	switch algorithm {
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 	if err != nil {
 		return "", err
 	}
 
-	//2. 创建分组模式，在crypto/cipher包中
-	//iv := bytes.Repeat([]byte("1"), block.BlockSize())
-	stream := cipher.NewCTR(block, iv)
+	stream := cipher.NewCTR(block, []byte(req.IV))
 	//3. 加密
 
-	dst := make([]byte, len(plainText))
-	stream.XORKeyStream(dst, plainText)
+	dst := make([]byte, len(req.Plaintext))
+	stream.XORKeyStream(dst, req.Plaintext)
 
 	cipherTextBase64 := base64.StdEncoding.EncodeToString(dst)
 
@@ -203,77 +182,70 @@ func aesCtrNoPadEncrypt(plainText, iv []byte, key string, algorithm Symmetry) (s
 }
 
 // aesCtrNoPadDecrypt 使用AES-CTR/NoPadding模式解密数据
-func aesCtrNoPadDecrypt(cipherText, key string, iv []byte, algorithm Symmetry) (string, error) {
+func aesCtrNoPadDecrypt(req *DecryptRequest, key []byte) ([]byte, error) {
 
-	cipherTextByte, err := base64.StdEncoding.DecodeString(cipherText)
+	cipherTextByte, err := base64.StdEncoding.DecodeString(req.Ciphertext)
 	if err != nil {
-		return "", err
-	}
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	var block cipher.Block
 
-	switch algorithm {
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	//2. 创建分组模式，在crypto/cipher包中
 	//iv := bytes.Repeat([]byte("1"), block.BlockSize())
-	stream := cipher.NewCTR(block, iv)
+	stream := cipher.NewCTR(block, []byte(req.IV))
 	//3. 加密
 	dst := make([]byte, len(cipherTextByte))
 	stream.XORKeyStream(dst, cipherTextByte)
 
-	return string(dst), nil
+	return dst, nil
 }
 
-func aesCtrPaddingEncrypt(plainText, iv []byte, key string, padding Padding, algorithm Symmetry) (string, error) {
-
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
-	}
-	var block cipher.Block
-	switch algorithm {
+func aesCtrPaddingEncrypt(req *EncipherRequest, key []byte) (string, error) {
+	var (
+		block cipher.Block
+		err   error
+	)
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 	if err != nil {
 		return "", err
 	}
 	blockSize := block.BlockSize()
 
-	switch padding {
+	switch req.Padding {
 	case PKCS5Padding:
-		plainText = pKCS5Padding(plainText, blockSize)
+		req.Plaintext = pKCS5Padding(req.Plaintext, blockSize)
 	case PKCS7Padding:
-		plainText = pKCS7Padding(plainText, blockSize)
+		req.Plaintext = pKCS7Padding(req.Plaintext, blockSize)
 	case ISO10126Padding:
-		plainText = iSO10126Padding(plainText)
+		req.Plaintext = iSO10126Padding(req.Plaintext)
 	case ZeroPadding:
-		plainText = zeroPadding(plainText, blockSize)
+		req.Plaintext = zeroPadding(req.Plaintext, blockSize)
 	}
-	//2. 创建分组模式，在crypto/cipher包中
-	//iv := bytes.Repeat([]byte("1"), block.BlockSize())
-	stream := cipher.NewCTR(block, iv)
+	//2. 创建分组模式
+	stream := cipher.NewCTR(block, []byte(req.IV))
 	//3. 加密
 
-	dst := make([]byte, len(plainText))
-	stream.XORKeyStream(dst, plainText)
+	dst := make([]byte, len(req.Plaintext))
+	stream.XORKeyStream(dst, req.Plaintext)
 
 	cipherTextBase64 := base64.StdEncoding.EncodeToString(dst)
 
@@ -281,39 +253,35 @@ func aesCtrPaddingEncrypt(plainText, iv []byte, key string, padding Padding, alg
 }
 
 // aesCtrPK5PadDecrypt 使用AES-CTR/NoPadding模式解密数据
-func aesCtrPaddingDecrypt(cipherText, key string, iv []byte, padding Padding, algorithm Symmetry) (string, error) {
+func aesCtrPaddingDecrypt(req *DecryptRequest, key []byte) ([]byte, error) {
 
-	cipherTextByte, err := base64.StdEncoding.DecodeString(cipherText)
+	cipherTextByte, err := base64.StdEncoding.DecodeString(req.Ciphertext)
 	if err != nil {
-		return "", err
-	}
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	var block cipher.Block
 
-	switch algorithm {
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	//2. 创建分组模式，在crypto/cipher包中
 	//iv := bytes.Repeat([]byte("1"), block.BlockSize())
-	stream := cipher.NewCTR(block, iv)
+	stream := cipher.NewCTR(block, []byte(req.IV))
 	//3. 加密
 	dst := make([]byte, len(cipherTextByte))
 	stream.XORKeyStream(dst, cipherTextByte)
 
-	switch padding {
+	switch req.Padding {
 	case PKCS5Padding:
 		dst = pKCS5UnPadding(dst)
 	case PKCS7Padding:
@@ -324,36 +292,33 @@ func aesCtrPaddingDecrypt(cipherText, key string, iv []byte, padding Padding, al
 		dst = zeroUnPadding(dst)
 	}
 
-	return string(dst), nil
+	return dst, nil
 }
 
 // aesEcbNoPadEncrypt 使用ECB模式进行AES加密
-func aesEcbNoPadEncrypt(plaintext []byte, key string, algorithm Symmetry) (string, error) {
-
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
-	}
-	var block cipher.Block
-
-	switch algorithm {
+func aesEcbNoPadEncrypt(req *EncipherRequest, key []byte) (string, error) {
+	var (
+		block cipher.Block
+		err   error
+	)
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 	if err != nil {
 		return "", err
 	}
 
 	blockSize := block.BlockSize()
-	ciphertext := make([]byte, len(plaintext))
+	ciphertext := make([]byte, len(req.Plaintext))
 
 	// 分组加密
-	for i := 0; i < len(plaintext); i += blockSize {
-		block.Encrypt(ciphertext[i:i+blockSize], plaintext[i:i+blockSize])
+	for i := 0; i < len(req.Plaintext); i += blockSize {
+		block.Encrypt(ciphertext[i:i+blockSize], req.Plaintext[i:i+blockSize])
 	}
 
 	ciphertextBase64 := base64.StdEncoding.EncodeToString(ciphertext)
@@ -362,29 +327,25 @@ func aesEcbNoPadEncrypt(plaintext []byte, key string, algorithm Symmetry) (strin
 }
 
 // aesEcbNoPadDecrypt 使用ECB模式进行AES解密
-func aesEcbNoPadDecrypt(ciphertext, key string, algorithm Symmetry) (string, error) {
+func aesEcbNoPadDecrypt(req *DecryptRequest, key []byte) ([]byte, error) {
 
-	ciphertextByte, err := base64.StdEncoding.DecodeString(ciphertext)
+	ciphertextByte, err := base64.StdEncoding.DecodeString(req.Ciphertext)
 	if err != nil {
-		return "", err
-	}
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	var block cipher.Block
 
-	switch algorithm {
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	blockSize := block.BlockSize()
 	plaintext := make([]byte, len(ciphertextByte))
@@ -394,24 +355,23 @@ func aesEcbNoPadDecrypt(ciphertext, key string, algorithm Symmetry) (string, err
 		block.Decrypt(plaintext[i:i+blockSize], ciphertextByte[i:i+blockSize])
 	}
 
-	return string(plaintext), nil
+	return plaintext, nil
 }
 
 // 使用ECB模式进行AES加密
-func aesEcbPaddingEncrypt(plainText []byte, key string, padding Padding, algorithm Symmetry) (string, error) {
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
-	}
-	var block cipher.Block
+func aesEcbPaddingEncrypt(req *EncipherRequest, key []byte) (string, error) {
+	var (
+		block cipher.Block
+		err   error
+	)
 
-	switch algorithm {
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 	if err != nil {
 		return "", err
@@ -419,22 +379,22 @@ func aesEcbPaddingEncrypt(plainText []byte, key string, padding Padding, algorit
 
 	blockSize := block.BlockSize()
 
-	switch padding {
+	switch req.Padding {
 	case PKCS5Padding:
-		plainText = pKCS5Padding(plainText, blockSize)
+		req.Plaintext = pKCS5Padding(req.Plaintext, blockSize)
 	case PKCS7Padding:
-		plainText = pKCS7Padding(plainText, blockSize)
+		req.Plaintext = pKCS7Padding(req.Plaintext, blockSize)
 	case ISO10126Padding:
-		plainText = iSO10126Padding(plainText)
+		req.Plaintext = iSO10126Padding(req.Plaintext)
 	case ZeroPadding:
-		plainText = zeroPadding(plainText, blockSize)
+		req.Plaintext = zeroPadding(req.Plaintext, blockSize)
 	}
 
-	ciphertext := make([]byte, len(plainText))
+	ciphertext := make([]byte, len(req.Plaintext))
 
 	// 分组加密
-	for i := 0; i < len(plainText); i += block.BlockSize() {
-		block.Encrypt(ciphertext[i:i+block.BlockSize()], plainText[i:i+block.BlockSize()])
+	for i := 0; i < len(req.Plaintext); i += block.BlockSize() {
+		block.Encrypt(ciphertext[i:i+block.BlockSize()], req.Plaintext[i:i+block.BlockSize()])
 	}
 	ciphertextBase64 := base64.StdEncoding.EncodeToString(ciphertext)
 
@@ -442,29 +402,25 @@ func aesEcbPaddingEncrypt(plainText []byte, key string, padding Padding, algorit
 }
 
 // 使用ECB模式进行AES解密
-func aesEcbPaddingDecrypt(ciphertext, key string, padding Padding, algorithm Symmetry) (string, error) {
+func aesEcbPaddingDecrypt(req *DecryptRequest, key []byte) ([]byte, error) {
 
-	ciphertextByte, err := base64.StdEncoding.DecodeString(ciphertext)
+	ciphertextByte, err := base64.StdEncoding.DecodeString(req.Ciphertext)
 	if err != nil {
-		return "", err
-	}
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	var block cipher.Block
 
-	switch algorithm {
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	plaintext := make([]byte, len(ciphertextByte))
@@ -474,7 +430,7 @@ func aesEcbPaddingDecrypt(ciphertext, key string, padding Padding, algorithm Sym
 		block.Decrypt(plaintext[i:i+block.BlockSize()], ciphertextByte[i:i+block.BlockSize()])
 	}
 
-	switch padding {
+	switch req.Padding {
 	case PKCS5Padding:
 		plaintext = pKCS5UnPadding(plaintext)
 	case PKCS7Padding:
@@ -485,130 +441,119 @@ func aesEcbPaddingDecrypt(ciphertext, key string, padding Padding, algorithm Sym
 		plaintext = zeroUnPadding(plaintext)
 	}
 
-	return string(plaintext), nil
+	return plaintext, nil
 }
 
-func aesCfbNoPadEncrypt(plainText, iv []byte, key string, algorithm Symmetry) (string, error) {
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
-	}
-	var block cipher.Block
-
-	switch algorithm {
+func aesCfbNoPadEncrypt(req *EncipherRequest, key []byte) (string, error) {
+	var (
+		block cipher.Block
+		err   error
+	)
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 	if err != nil {
 		return "", err
 	}
 
-	ciphertext := make([]byte, len(plainText))
-	stream := cipher.NewCFBEncrypter(block, iv)
-	stream.XORKeyStream(ciphertext, plainText)
+	ciphertext := make([]byte, len(req.Plaintext))
+	stream := cipher.NewCFBEncrypter(block, []byte(req.IV))
+	stream.XORKeyStream(ciphertext, req.Plaintext)
 	ciphertextBase64 := base64.StdEncoding.EncodeToString(ciphertext)
 	return ciphertextBase64, nil
 }
 
-func aesCfbNoPadDecrypt(ciphertext, key string, iv []byte, algorithm Symmetry) (string, error) {
-	ciphertextByte, err := base64.StdEncoding.DecodeString(ciphertext)
+func aesCfbNoPadDecrypt(req *DecryptRequest, key []byte) ([]byte, error) {
+	ciphertextByte, err := base64.StdEncoding.DecodeString(req.Ciphertext)
 	if err != nil {
-		return "", err
-	}
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	var block cipher.Block
-	switch algorithm {
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	plainText := make([]byte, len(ciphertextByte))
-	stream := cipher.NewCFBDecrypter(block, iv)
+	stream := cipher.NewCFBDecrypter(block, []byte(req.IV))
 	stream.XORKeyStream(plainText, ciphertextByte)
 
-	return string(plainText), nil
+	return plainText, nil
 }
 
-func aesCfbPaddingEncrypt(plainText, iv []byte, key string, padding Padding, algorithm Symmetry) (string, error) {
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
-	}
-	var block cipher.Block
+func aesCfbPaddingEncrypt(req *EncipherRequest, key []byte) (string, error) {
+	var (
+		block cipher.Block
+		err   error
+	)
 
-	switch algorithm {
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 	if err != nil {
 		return "", err
 	}
 	blockSize := block.BlockSize()
 
-	switch padding {
+	switch req.Padding {
 	case PKCS5Padding:
-		plainText = pKCS5Padding(plainText, blockSize)
+		req.Plaintext = pKCS5Padding(req.Plaintext, blockSize)
 	case PKCS7Padding:
-		plainText = pKCS7Padding(plainText, blockSize)
+		req.Plaintext = pKCS7Padding(req.Plaintext, blockSize)
 	case ISO10126Padding:
-		plainText = iSO10126Padding(plainText)
+		req.Plaintext = iSO10126Padding(req.Plaintext)
 	case ZeroPadding:
-		plainText = zeroPadding(plainText, blockSize)
+		req.Plaintext = zeroPadding(req.Plaintext, blockSize)
 	}
 
-	ciphertext := make([]byte, len(plainText))
-	stream := cipher.NewCFBEncrypter(block, iv)
-	stream.XORKeyStream(ciphertext, plainText)
+	ciphertext := make([]byte, len(req.Plaintext))
+	stream := cipher.NewCFBEncrypter(block, []byte(req.IV))
+	stream.XORKeyStream(ciphertext, req.Plaintext)
 	ciphertextBase64 := base64.StdEncoding.EncodeToString(ciphertext)
 	return ciphertextBase64, nil
 }
 
-func aesCfbPaddingDecrypt(ciphertext, key string, iv []byte, padding Padding, algorithm Symmetry) (string, error) {
-	ciphertextByte, err := base64.StdEncoding.DecodeString(ciphertext)
+func aesCfbPaddingDecrypt(req *DecryptRequest, key []byte) ([]byte, error) {
+	ciphertextByte, err := base64.StdEncoding.DecodeString(req.Ciphertext)
 	if err != nil {
-		return "", err
-	}
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	var block cipher.Block
 
-	switch algorithm {
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	plainText := make([]byte, len(ciphertextByte))
-	stream := cipher.NewCFBDecrypter(block, iv)
+	stream := cipher.NewCFBDecrypter(block, []byte(req.IV))
 	stream.XORKeyStream(plainText, ciphertextByte)
 
-	switch padding {
+	switch req.Padding {
 	case PKCS5Padding:
 		plainText = pKCS5UnPadding(plainText)
 	case PKCS7Padding:
@@ -619,135 +564,125 @@ func aesCfbPaddingDecrypt(ciphertext, key string, iv []byte, padding Padding, al
 		plainText = zeroUnPadding(plainText)
 	}
 
-	return string(plainText), nil
+	return plainText, nil
 }
 
-func aesOfbNoPadEncrypt(plainText, iv []byte, key string, algorithm Symmetry) (string, error) {
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
-	}
-	var block cipher.Block
+func aesOfbNoPadEncrypt(req *EncipherRequest, key []byte) (string, error) {
+	var (
+		block cipher.Block
+		err   error
+	)
 
-	switch algorithm {
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 	if err != nil {
 		return "", err
 	}
 
-	ciphertext := make([]byte, len(plainText))
-	stream := cipher.NewOFB(block, iv)
-	stream.XORKeyStream(ciphertext, plainText)
+	ciphertext := make([]byte, len(req.Plaintext))
+	stream := cipher.NewOFB(block, []byte(req.IV))
+	stream.XORKeyStream(ciphertext, req.Plaintext)
 	ciphertextBase64 := base64.StdEncoding.EncodeToString(ciphertext)
 	return ciphertextBase64, nil
 }
 
-func aesOfbNoPadDecrypt(ciphertext, key string, iv []byte, algorithm Symmetry) (string, error) {
+func aesOfbNoPadDecrypt(req *DecryptRequest, key []byte) ([]byte, error) {
 
-	ciphertextByte, err := base64.StdEncoding.DecodeString(ciphertext)
+	ciphertextByte, err := base64.StdEncoding.DecodeString(req.Ciphertext)
 	if err != nil {
-		return "", err
-	}
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	var block cipher.Block
 
-	switch algorithm {
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	plainText := make([]byte, len(ciphertextByte))
-	stream := cipher.NewOFB(block, iv)
+	stream := cipher.NewOFB(block, []byte(req.IV))
 	stream.XORKeyStream(plainText, ciphertextByte)
 
-	return string(plainText), nil
+	return plainText, nil
 }
 
-func aesOfbPaddingEncrypt(plainText, iv []byte, key string, padding Padding, algorithm Symmetry) (string, error) {
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
-	}
-	var block cipher.Block
+func aesOfbPaddingEncrypt(req *EncipherRequest, key []byte) (string, error) {
+	var (
+		block cipher.Block
+		err   error
+	)
 
-	switch algorithm {
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 	if err != nil {
 		return "", err
 	}
 	blockSize := block.BlockSize()
 
-	switch padding {
+	switch req.Padding {
 	case PKCS5Padding:
-		plainText = pKCS5Padding(plainText, blockSize)
+		req.Plaintext = pKCS5Padding(req.Plaintext, blockSize)
 	case PKCS7Padding:
-		plainText = pKCS7Padding(plainText, blockSize)
+		req.Plaintext = pKCS7Padding(req.Plaintext, blockSize)
 	case ISO10126Padding:
-		plainText = iSO10126Padding(plainText)
+		req.Plaintext = iSO10126Padding(req.Plaintext)
 	case ZeroPadding:
-		plainText = zeroPadding(plainText, blockSize)
+		req.Plaintext = zeroPadding(req.Plaintext, blockSize)
 	}
 
-	ciphertext := make([]byte, len(plainText))
-	stream := cipher.NewOFB(block, iv)
-	stream.XORKeyStream(ciphertext, plainText)
+	ciphertext := make([]byte, len(req.Plaintext))
+	stream := cipher.NewOFB(block, []byte(req.IV))
+	stream.XORKeyStream(ciphertext, req.Plaintext)
 	ciphertextBase64 := base64.StdEncoding.EncodeToString(ciphertext)
 	return ciphertextBase64, nil
 }
 
-func aesOfbPaddingDecrypt(ciphertext, key string, iv []byte, padding Padding, algorithm Symmetry) (string, error) {
+func aesOfbPaddingDecrypt(req *DecryptRequest, key []byte) ([]byte, error) {
 
-	ciphertextByte, err := base64.StdEncoding.DecodeString(ciphertext)
+	ciphertextByte, err := base64.StdEncoding.DecodeString(req.Ciphertext)
 	if err != nil {
-		return "", err
-	}
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	var block cipher.Block
 
-	switch algorithm {
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	plainText := make([]byte, len(ciphertextByte))
-	stream := cipher.NewOFB(block, iv)
+	stream := cipher.NewOFB(block, []byte(req.IV))
 	stream.XORKeyStream(plainText, ciphertextByte)
 
-	switch padding {
+	switch req.Padding {
 	case PKCS5Padding:
 		plainText = pKCS5UnPadding(plainText)
 	case PKCS7Padding:
@@ -758,23 +693,22 @@ func aesOfbPaddingDecrypt(ciphertext, key string, iv []byte, padding Padding, al
 		plainText = zeroUnPadding(plainText)
 	}
 
-	return string(plainText), nil
+	return plainText, nil
 }
 
-func aesGcmNoPadEncrypt(plaintext []byte, key string, algorithm Symmetry) (string, error) {
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
-	}
-	var block cipher.Block
+func aesGcmNoPadEncrypt(req *EncipherRequest, key []byte) (string, error) {
+	var (
+		block cipher.Block
+		err   error
+	)
 
-	switch algorithm {
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 	if err != nil {
 		return "", err
@@ -790,43 +724,40 @@ func aesGcmNoPadEncrypt(plaintext []byte, key string, algorithm Symmetry) (strin
 		return "", err
 	}
 
-	ciphertext := aesGCM.Seal(nil, nonce, plaintext, nil)
+	ciphertext := aesGCM.Seal(nil, nonce, req.Plaintext, nil)
 	ciphertext = append(nonce, ciphertext...)
 	ciphertextBase64 := base64.StdEncoding.EncodeToString(ciphertext)
 	return ciphertextBase64, nil
 }
 
-func aesGcmNoPadDecrypt(ciphertext, key string, algorithm Symmetry) (string, error) {
-	ciphertextBase64, err := base64.StdEncoding.DecodeString(ciphertext)
+func aesGcmNoPadDecrypt(req *DecryptRequest, key []byte) ([]byte, error) {
+	ciphertextBase64, err := base64.StdEncoding.DecodeString(req.Ciphertext)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
-	}
+
 	var block cipher.Block
 
-	switch algorithm {
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	aesGCM, err := cipher.NewGCM(block)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	nonceSize := aesGCM.NonceSize()
 	if len(ciphertextBase64) < nonceSize {
-		return "", fmt.Errorf("密文长度不正确")
+		return nil, fmt.Errorf("密文长度不正确")
 	}
 
 	nonce := ciphertextBase64[:nonceSize]
@@ -834,26 +765,25 @@ func aesGcmNoPadDecrypt(ciphertext, key string, algorithm Symmetry) (string, err
 
 	plaintext, err := aesGCM.Open(nil, nonce, ciphertextBase64, nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return string(plaintext), nil
+	return plaintext, nil
 }
 
-func aesGcmPaddingEncrypt(plainText []byte, key string, padding Padding, algorithm Symmetry) (string, error) {
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
-	}
-	var block cipher.Block
+func aesGcmPaddingEncrypt(req *EncipherRequest, key []byte) (string, error) {
+	var (
+		block cipher.Block
+		err   error
+	)
 
-	switch algorithm {
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 
 	if err != nil {
@@ -872,54 +802,51 @@ func aesGcmPaddingEncrypt(plainText []byte, key string, padding Padding, algorit
 
 	blockSize := block.BlockSize()
 
-	switch padding {
+	switch req.Padding {
 	case PKCS5Padding:
-		plainText = pKCS5Padding(plainText, blockSize)
+		req.Plaintext = pKCS5Padding(req.Plaintext, blockSize)
 	case PKCS7Padding:
-		plainText = pKCS7Padding(plainText, blockSize)
+		req.Plaintext = pKCS7Padding(req.Plaintext, blockSize)
 	case ISO10126Padding:
-		plainText = iSO10126Padding(plainText)
+		req.Plaintext = iSO10126Padding(req.Plaintext)
 	case ZeroPadding:
-		plainText = zeroPadding(plainText, blockSize)
+		req.Plaintext = zeroPadding(req.Plaintext, blockSize)
 	}
 
-	ciphertext := aesGCM.Seal(nil, nonce, plainText, nil)
+	ciphertext := aesGCM.Seal(nil, nonce, req.Plaintext, nil)
 	ciphertext = append(nonce, ciphertext...)
 	ciphertextBase64 := base64.StdEncoding.EncodeToString(ciphertext)
 	return ciphertextBase64, nil
 }
 
-func aesGcmPaddingDecrypt(ciphertext, key string, padding Padding, algorithm Symmetry) (string, error) {
-	ciphertextBase64, err := base64.StdEncoding.DecodeString(ciphertext)
+func aesGcmPaddingDecrypt(req *DecryptRequest, key []byte) ([]byte, error) {
+	ciphertextBase64, err := base64.StdEncoding.DecodeString(req.Ciphertext)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	keyBytes, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return "", err
-	}
+
 	var block cipher.Block
 
-	switch algorithm {
+	switch req.Algorithm {
 	case AES:
-		block, err = aes.NewCipher(keyBytes)
+		block, err = aes.NewCipher(key)
 	case SM4:
-		block, err = sm4.NewCipher(keyBytes)
+		block, err = sm4.NewCipher(key)
 	case DES:
-		block, err = des.NewTripleDESCipher(keyBytes)
+		block, err = des.NewTripleDESCipher(key)
 	}
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	aesGCM, err := cipher.NewGCM(block)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	nonceSize := aesGCM.NonceSize()
 	if len(ciphertextBase64) < nonceSize {
-		return "", fmt.Errorf("密文长度不正确")
+		return nil, fmt.Errorf("密文长度不正确")
 	}
 
 	nonce := ciphertextBase64[:nonceSize]
@@ -927,9 +854,9 @@ func aesGcmPaddingDecrypt(ciphertext, key string, padding Padding, algorithm Sym
 
 	plainText, err := aesGCM.Open(nil, nonce, ciphertextBase64, nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	switch padding {
+	switch req.Padding {
 	case PKCS5Padding:
 		plainText = pKCS5UnPadding(plainText)
 	case PKCS7Padding:
@@ -940,7 +867,7 @@ func aesGcmPaddingDecrypt(ciphertext, key string, padding Padding, algorithm Sym
 		plainText = zeroUnPadding(plainText)
 	}
 
-	return string(plainText), nil
+	return plainText, nil
 }
 
 func pKCS5Padding(ciphertext []byte, blockSize int) []byte {

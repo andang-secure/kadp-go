@@ -3,6 +3,7 @@ package utils
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	logger "github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -20,17 +21,20 @@ func GetOsInfo() (string, error) {
 	var osInfo string
 	var err error
 
+	logger.Info("获取到系统：", goos)
 	switch goos {
 	case "linux":
 		osInfo, err = linuxOsInfo()
 	case "windows":
-		logger.Debug("开始获取")
 		osInfo, err = windowsOsInfo()
 	case "darwin":
 		osInfo, err = macOsInfo()
 		// 获取 macOS 系统的详细信息的方法
 	default:
-		err = fmt.Errorf("Unsupported operating system: %s", goos)
+		err = fmt.Errorf("unsupported operating system: %s", goos)
+	}
+	if err != nil {
+		return "", errors.New("获取系统参数错误" + err.Error())
 	}
 
 	return osInfo, err
@@ -41,7 +45,6 @@ func windowsOsInfo() (string, error) {
 	cmd := exec.Command("cmd", "/c", "wmic os get Caption /value")
 	out, err := cmd.Output()
 	if err != nil {
-		fmt.Printf("Unable to obtain system" + err.Error())
 		return "", err
 	}
 	// 提取操作系统型号并去除特定部分

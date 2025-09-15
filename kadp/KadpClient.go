@@ -1,50 +1,60 @@
 package kadp
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
-	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/andang-secure/kadp-go/global"
+	"github.com/andang-secure/kadp-go/configs"
+	"github.com/andang-secure/kadp-go/order"
 	"github.com/andang-secure/kadp-go/utils"
-	"github.com/andang-secure/kadp-go/utils/sm4algo"
+	"github.com/mitchellh/mapstructure"
 	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	logger "github.com/sirupsen/logrus"
-	"log"
-	"regexp"
+	"runtime"
 )
 
-type KadpClient struct {
-	domain           string
-	credential       string
-	clientCredential string
-	version          string
-	labelCipherText  map[string]string
-	keyMap           map[string]string
-	keyStore         keystore.KeyStore
-	keyStoreFileName string
-	keyStorePassWord string
-	authStatus       bool
-	sessionKey       []byte
+type KadpImpl interface {
+	CreateCipherKey(length int, label string) ([]byte, error)
+	FpeEncipher(req *FpeEncipherRequest) (string, error)
+	FpeDecipher(req *FpeDecipherRequest) (string, error)
+	Encipher(req *EncipherRequest) (string, error)
+	Decipher(req *DecryptRequest) ([]byte, error)
+	AsymmetricKeyPair(design Asymmetric) (publicKey string, privateKey string, err error)
+	AsymmetricEncrypt(req *AsymmetricEncryptRequest) (string, error)
+	AsymmetricDecrypt(req *AsymmetricDecryptRequest) (string, error)
+	SM2Sign(req *SM2SignRequest) (r, s string, err error)
+	SM2Verify(req *SM2VerifyRequest) (bool, error)
+	RsaSign(req *RsaSignRequest) (string, error)
+	RsaVerify(req *RsaVerifyRequest) (bool, error)
+	DigestEncrypt(plaintext string) string
+	Hmac(req *HmacRequest) (string, error)
+	HmacVerify(req *HmacVerifyRequest) (bool, error)
+	SHASum(message []byte, shaHash Hash) (string, error)
 }
 
-var keyPair = make(map[string]string)
+type KadpClient struct {
+	config          *configs.KmsConfig
+	header          map[string]string
+	version         string
+	labelCipherText map[string]string
+	keyMap          map[string]string
+	keyStore        keystore.KeyStore
+	authStatus      bool
+	privateKey      string
+	keyProcessor    *keyProcessor
+}
 
 var tokenMap = make(map[string]string)
 
-// NewKADPClient 初始化KADP
-func NewKADPClient(domain, credential, clientCredential, keyStoreFileName, keyStorePassWord string) (*KadpClient, error) {
+// NewKADPClient 初始化
+func NewKADPClient(config *configs.KmsConfig) (*KadpClient, error) {
 	//logger.DailyLogger(logFileDir, logFileName)
 
 	KADPClient := &KadpClient{
-		domain:           domain,
-		credential:       credential,
-		clientCredential: clientCredential,
-		keyStoreFileName: keyStoreFileName,
-		keyStorePassWord: keyStorePassWord,
-		keyStore:         utils.ReadKeyStore(keyStoreFileName, []byte(keyStorePassWord)),
+		config: config,
+		//keyStore: utils.ReadKeyStore(configs.KeystoreFileName, []byte(configs.KeystorePassword)),
+		header: map[string]string{
+			configs.TOKEN: config.Credential,
+		},
 	}
 	var err error
 	KADPClient.labelCipherText = make(map[string]string, 0)
@@ -57,21 +67,43 @@ func NewKADPClient(domain, credential, clientCredential, keyStoreFileName, keySt
 	return KADPClient, nil
 }
 
-func (client *KadpClient) authClient(addr, system, ip string) (interface{}, error) {
-	if addr != "" && system != "" && ip != "" {
-		reqMap := map[string]string{
-			"mac_addr": addr,
-			"ip":       ip,
-			"system":   system,
-			"token":    client.clientCredential,
-		}
-		result, err := utils.AuthSendRequest("POST", client.domain+"/v1/ksp/open_api/kadp/register", reqMap)
-		if err != nil {
-			return nil, err
-		}
-		return result, nil
+func (client *KadpClient) registerAuth(addr, system, ip string) error {
+	// 构造请求参数
+	registerReq := order.RegisterReq{
+		MacAddr: addr,
+		IP:      ip,
+		System:  system,
+		Token:   client.config.RegisterToken,
 	}
-	return nil, errors.New("获取系统参数错误")
+	// 发送认证请求
+	result, err := utils.AuthSendRequest(configs.POST, client.config.Domain+configs.REGISTE_URL, registerReq)
+	if err != nil {
+		return fmt.Errorf("认证请求失败: %w", err)
+	}
+
+	// 防止空指针
+	if result == nil {
+		return errors.New("响应数据为空")
+	}
+
+	// 类型断言并转换响应结果
+	resultMap, ok := result.(map[string]interface{})
+	if !ok {
+		return errors.New("响应数据格式错误")
+	}
+
+	// 将 map 转换为 KmsRes 结构体（避免 Marshal/Unmarshal）
+	var registerRes order.KmsRes
+	if err := mapstructure.Decode(resultMap, &registerRes); err != nil {
+		return fmt.Errorf("响应数据转换失败: %w", err)
+	}
+
+	// 检查业务状态码
+	if registerRes.Code != 0 {
+		return fmt.Errorf("ksm server err: %s", registerRes.Msg) // 修正错误包装方式
+	}
+
+	return nil
 }
 
 // init 开始加载进行连接
@@ -79,543 +111,365 @@ func (client *KadpClient) init() (bool, error) {
 
 	mac, err := utils.GetMac()
 	if err != nil {
-		return false, fmt.Errorf("获取系统失败: %v", err)
+		return false, fmt.Errorf("获取系统Mac失败: %v", err)
 	}
-
-	system, err := utils.GetOsInfo()
-	if err != nil {
-		logger.Error("获取系统失败")
-		return false, fmt.Errorf("获取系统失败: %v", err)
-	}
+	system := runtime.GOOS
 
 	ip, err := utils.GetOutBoundIP()
 	if err != nil {
-		logger.Error("获取系统失败")
+		return false, fmt.Errorf("系统IP信息失败: %v", err)
+	}
+
+	//开始客户端认证
+	err = client.registerAuth(mac, ip, system)
+	if err != nil {
 		return false, fmt.Errorf("获取系统失败: %v", err)
 	}
 
-	//开始认证
+	logger.Debug("* register /Client authentication result: true")
+	logger.Debug("===============end register authentication ...=================")
+	logger.Debug("")
 
-	isAuthResult, err := client.authClient(mac, ip, system)
-
-	resultMap := isAuthResult.(map[string]interface{})
-	fmt.Println(resultMap)
-	if resultMap["code"].(float64) != 0 {
-		fmt.Errorf("客户端认证失败，请重试")
-		return false, fmt.Errorf("客户端认证失败，请重试")
+	var publicKey, privateKey string
+	switch configs.Alg {
+	case configs.RSA:
+		publicKey, privateKey, err = rsaKeyGenerator()
+		if err != nil {
+			return false, fmt.Errorf("init err: %v", err)
+		}
+	case configs.SM2:
+		//暂未有sm2实现
 	}
 
-	//通过
-	decrypt, err := client.keyDecrypt(client.credential, []byte("XIANANDANGGONGSI"))
-
-	if err != nil {
-		logger.Error("Failed to decrypt:", err)
-		return false, err
-	}
-	signRandom, PubRandom, err := utils.CreateRomdomPub()
-
-	reqMap := map[string]string{
-		"mac_addr":    mac,
-		"system":      system,
-		"ip":          ip,
-		"pub_random":  PubRandom,
-		"sign_random": signRandom,
+	// 构造请求参数
+	authReq := order.AuthReq{
+		Alg:     configs.Alg,
+		IP:      ip,
+		MacAddr: mac,
+		Pub:     publicKey,
+		System:  system,
 	}
 
-	credentialMap := map[string]string{
-		"token": decrypt,
-	}
-
-	result, err := utils.SendRequest("POST", client.domain+"/v1/ksp/open_api/auth", credentialMap, reqMap)
+	logger.Debug("===============start AUTH authentication ...=================")
+	logger.Debug(authReq)
+	result, err := utils.SendRequest(configs.POST, client.config.Domain+configs.AUTH_URL, client.header, authReq)
 
 	if err != nil {
 		logger.Error("Failed to send request:", err)
 		return false, fmt.Errorf("连接失败")
 	}
 
-	var loginResp = global.AuthResponse{}
-	resultByte, err := json.Marshal(result)
-
-	err = json.Unmarshal(resultByte, &loginResp)
-	if err != nil {
-		log.Println("反序列化失败")
-		return false, err
+	// 防止空指针
+	if result == nil {
+		return false, errors.New("响应数据为空")
 	}
 
-	PubRandomR := loginResp.Data["pub_random"]
-	SignRandomR := loginResp.Data["sign_random"]
-	MyRandomData := loginResp.Data["random_data"]
-	tokenMap["token"] = loginResp.Data["token"]
-
-	//tokenMap["token"] = resultMap["data"].(string)
-	key, err := utils.SessionKeyResp(PubRandomR, SignRandomR, MyRandomData)
-	if err != nil {
-		return false, err
+	// 类型断言并转换响应结果
+	resultMap, ok := result.(map[string]interface{})
+	if !ok {
+		return false, errors.New("响应数据格式错误")
 	}
-	client.sessionKey = key
 
+	// 将 map 转换为 KmsRes 结构体（避免 Marshal/Unmarshal）
+	var authRes order.KmsAuthRes
+	if err := mapstructure.Decode(resultMap, &authRes); err != nil {
+		return false, fmt.Errorf("响应数据转换失败: %w", err)
+	}
+
+	// 检查业务状态码
+	if authRes.Code != 0 {
+		return false, fmt.Errorf("ksm server err: %s", authRes.Msg) // 修正错误包装方式
+	}
+	client.keyProcessor = &keyProcessor{
+		privateKey: privateKey,
+		domain:     client.config.Domain,
+		header: map[string]string{
+			configs.TOKEN: authRes.Data.Token,
+		},
+	}
+	logger.Debug("* AUTH /Client authentication result: true")
+	logger.Debug("===============end AUTH authentication ...=================")
+	logger.Debug("")
 	return true, nil
 
 }
-
-// getDekCipherText 获取kek
-func (client *KadpClient) getDekCipherText(label string, length int) error {
-
-	reqMap := map[string]interface{}{
-		"label":  label,
-		"length": length,
-	}
-
-	result, err := utils.SendRequest("POST", client.domain+"/v1/ksp/open_api/dek_text", tokenMap, reqMap)
-	if err != nil {
-		logger.Error("Failed to send request:", err)
-		return errors.New("failed to send request")
-	}
-
-	resultMap := result.(map[string]interface{})
-	code := resultMap["code"].(float64)
-
-	if code == 4604 {
-		client.authStatus, err = client.init()
-		if err != nil {
-			logger.Error("连接失败", err)
-			return err
-		}
-		result, err = utils.SendRequest("POST", client.domain+"/v1/ksp/open_api/dek_text", tokenMap, reqMap)
-		if err != nil {
-			logger.Error("", err)
-			return err
-		}
-		resultMap = result.(map[string]interface{})
-	}
-	data := resultMap["data"].(string)
-	bodyByte, _ := base64.StdEncoding.DecodeString(data)
-	kekText, err := sm4algo.Sm4CBCDecrypt(bodyByte, client.sessionKey[:16], client.sessionKey[16:])
-	fmt.Println("dek解密成功", kekText)
-	if err != nil {
-		logger.Error("failed to decrypt:", err)
-		return errors.New("failed to decrypt")
-	}
-
-	var TextJson map[string]string
-	err = json.Unmarshal([]byte(kekText), &TextJson)
-	if err != nil {
-		logger.Error("解析 JSON 失败:", err)
-		return err
-	}
-
-	versionValue := TextJson["version"]
-
-	client.labelCipherText[label] = kekText
-	client.version = versionValue
-	_, err = client.cipherTextDecrypt(label)
-	if err != nil {
-		return err
-	}
-
-	return err
-
-}
-
-// cipherTextDecrypt 进行dek解密
-func (client *KadpClient) cipherTextDecrypt(label string) (string, error) {
-	dekCipherReq := client.labelCipherText[label]
-
-	var TextJson map[string]string
-	err := json.Unmarshal([]byte(dekCipherReq), &TextJson)
-	if err != nil {
-		logger.Error("解析 JSON 失败:", err)
-		return "", err
-	}
-
-	result, err := utils.SendRequest("POST", client.domain+"/v1/ksp/open_api/dek", tokenMap, TextJson)
-	if err != nil {
-		logger.Error("请求dek解密失败", err)
-		return "", err
-	}
-
-	resultMap := result.(map[string]interface{})
-	code := resultMap["code"].(float64)
-	if code == 4604 {
-		client.authStatus, err = client.init()
-		if err != nil {
-			return "", err
-		}
-		result, err = utils.SendRequest("POST", client.domain+"/v1/ksp/open_api/dek", tokenMap, dekCipherReq)
-		if err != nil {
-			logger.Error("请求失败", err)
-			return "", err
-		}
-		resultMap = result.(map[string]interface{})
-	}
-	dek := resultMap["data"].(string)
-
-	bodyByte, _ := base64.StdEncoding.DecodeString(dek)
-	dekKeyBase, err := sm4algo.Sm4CBCDecrypt(bodyByte, client.sessionKey[:16], client.sessionKey[16:])
-	fmt.Println("dek解密成功", dekKeyBase)
-
-	if err != nil {
-		logger.Error("秘钥错误,解密失败", err)
-		return "", err
-	}
-
-	keyEntry := utils.CreateKeyEntry([]byte(dekKeyBase))
-	utils.StoreSecretKey(label, keyEntry, client.keyStore, client.keyStoreFileName, []byte(client.keyStorePassWord))
-	if err != nil {
-		return "", err
-	}
-	client.keyMap[label] = dekKeyBase
-	return dekKeyBase, nil
-
-}
-
-// getKey keystore密钥库获取key
-func (client *KadpClient) getKey(length int, label string) error {
+func (client *KadpClient) CreateCipherKey(length int, label string) ([]byte, error) {
 	if !client.authStatus {
-		return nil
+		return nil, errors.New("KMS authentication failed")
 	}
-
-	if length != 16 && length != 32 && length != 24 {
-		return errors.New("length parameter error, can only be 16-24-32")
-	}
-
 	if label == "" {
-		return errors.New("label parameter cannot be empty")
+		return nil, errors.New("label cannot be empty")
 	}
-
-	keyEntry, err := client.keyStore.GetPrivateKeyEntry(label, []byte("shanghaiandanggongsi"))
-	if err != nil {
-		logger.Info("keystore中不存在")
+	if length != 16 && length != 24 && length != 32 {
+		return nil, errors.New("key length must be 16, 24, or 32")
 	}
-	key := string(keyEntry.PrivateKey)
-	if key == "" {
-		if _, ok := client.keyMap[label]; !ok {
-			err = client.getDekCipherText(label, length)
-			if err != nil {
-				logger.Error(err)
-				return err
-			}
-		} else {
-			_, err = client.cipherTextDecrypt(label)
-			if err != nil {
-				logger.Error(err)
-				return err
-			}
-
-		}
-
-		keyEntry, err = client.keyStore.GetPrivateKeyEntry(label, []byte("shanghaiandanggongsi"))
+	kek, err := utils.NewKeyStoreObj().RetrieveSecretKey(label)
+	if err != nil || kek == nil {
+		kek, err = client.keyProcessor.fetchAndCacheKek(label, length)
 		if err != nil {
-			logger.Debug("keystore中不存在")
+			return nil, fmt.Errorf("获取kek密钥失败: %w", err)
 		}
-		key = string(keyEntry.PrivateKey)
 	}
 
-	if _, ok := client.keyMap[label]; !ok {
-		client.keyMap[label] = key
+	randomBytes, err := utils.GenerateRandomBytes(length)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	enyKey, err := client.keyProcessor.encryptDek(randomBytes, kek)
+	if err != nil {
+		return nil, fmt.Errorf("加密dek密钥失败: %w", err)
+	}
+	return enyKey, nil
 }
 
-func (client *KadpClient) keyDecrypt(ciphertext string, key []byte) (string, error) {
-
-	decodeCiphertext, err := base64.StdEncoding.DecodeString(ciphertext)
-	if err != nil {
-		return "", err
+func (client *KadpClient) FpeEncipher(req *FpeEncipherRequest) (string, error) {
+	if !client.authStatus {
+		return "", errors.New("KMS authentication failed")
 	}
-
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return "", err
-	}
-
-	iv := make([]byte, aes.BlockSize)
-	// 这里示例简化，将IV设置为密钥
-	copy(iv, key)
-
-	plaintext := make([]byte, len(ciphertext))
-
-	myKeyMode := cipher.NewCBCDecrypter(block, iv)
-	myKeyMode.CryptBlocks(plaintext, decodeCiphertext)
-
-	// 去除填充数据
-	myKeyPadding := int(plaintext[len(plaintext)-1])
-	plaintext = plaintext[:len(plaintext)-myKeyPadding]
-
-	// 创建正则表达式模式，匹配非可见字符和特殊字符
-	pattern := "[[:cntrl:]]"
-
-	// 使用正则表达式替换乱码部分
-	re := regexp.MustCompile(pattern)
-	trimmedToken := re.ReplaceAllString(string(plaintext), "")
-
-	return trimmedToken, nil
-}
-
-func (client *KadpClient) FpeEncipher(plaintext string, fpe Fpe, tweak, alphabet string, length int, label string, start, end int) (string, error) {
-
-	if end-start < 5 || start < 0 || end < 0 {
+	if req.End-req.Start < 5 || req.Start < 0 || req.End < 0 {
 		return "", errors.New("开始位到结束位长度最少为6")
 	}
-	if len(plaintext) < end {
+	if len(req.Plaintext) < req.End {
 		return "", errors.New("结束位超出范围")
 	}
-
-	var err error
-	if _, ok := client.keyMap[label]; !ok {
-		err = client.getKey(length, label)
-		if err != nil {
-			return "", err
-		}
+	key, err := client.keyProcessor.retrieveOrFetchDekKey(req.Label, req.CipherKey)
+	if err != nil {
+		return "", fmt.Errorf("获取dek密钥失败: %w", err)
 	}
-	key := client.keyMap[label]
 
 	var ciphertext string
+	fpe := req.Fpe
 	switch fpe {
 	case FF1:
-		ciphertext, err = ff1Encrypt(plaintext, key, tweak, len([]rune(alphabet)), start, end, alphabet)
+		ciphertext, err = ff1Encrypt(req.Plaintext, key, []byte(req.Tweak), len([]rune(req.Alphabet)), req.Start, req.End, req.Alphabet)
 	case FF3:
-		ciphertext, err = ff3Encrypt(plaintext, key, tweak, len([]rune(alphabet)), start, end, alphabet)
+		ciphertext, err = ff3Encrypt(req.Plaintext, key, []byte(req.Tweak), len([]rune(req.Alphabet)), req.Start, req.End, req.Alphabet)
 	default:
-		err = fmt.Errorf("invalid choose value")
-		return "", err
+		return "", errors.New("invalid choose value")
 	}
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("加密失败: %w", err)
 	}
 
 	return ciphertext, err
 }
 
-func (client *KadpClient) FpeDecipher(ciphertext string, fpe Fpe, tweak, alphabet string, length int, label string, start, end int) (string, error) {
+func (client *KadpClient) FpeDecipher(req *FpeDecipherRequest) (string, error) {
 
-	if end-start < 5 || start < 0 || end < 0 {
+	if !client.authStatus {
+		return "", errors.New("KMS authentication failed")
+	}
+	if req.End-req.Start < 5 || req.Start < 0 || req.End < 0 {
 		return "", errors.New("开始位到结束位长度最少为6")
 	}
-	if len(ciphertext) < end {
+	if len(req.Ciphertext) < req.End {
 		return "", errors.New("结束位超出范围")
 	}
-	var err error
-
-	if _, ok := client.keyMap[label]; !ok {
-		err = client.getKey(length, label)
-		if err != nil {
-			return "", err
-		}
+	key, err := client.keyProcessor.retrieveOrFetchDekKey(req.Label, req.CipherKey)
+	if err != nil {
+		return "", fmt.Errorf("获取dek密钥失败: %w", err)
 	}
-	key := client.keyMap[label]
 
 	var plaintext string
-	switch fpe {
+	switch req.Fpe {
 	case FF1:
-		plaintext, err = ff1Decrypt(ciphertext, key, tweak, len([]rune(alphabet)), start, end, alphabet)
+		plaintext, err = ff1Decrypt(req.Ciphertext, key, []byte(req.Tweak), len([]rune(req.Alphabet)), req.Start, req.End, req.Alphabet)
 	case FF3:
-		plaintext, err = ff3Decrypt(ciphertext, key, tweak, len([]rune(alphabet)), start, end, alphabet)
+		plaintext, err = ff3Decrypt(req.Ciphertext, key, []byte(req.Tweak), len([]rune(req.Alphabet)), req.Start, req.End, req.Alphabet)
 	default:
-		err = fmt.Errorf("invalid choose value")
-		return "", err
+		return "", errors.New("invalid choose value")
 	}
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("解密失败: %w", err)
 	}
 
 	return plaintext, err
 }
 
-func (client *KadpClient) Encipher(plaintext []byte, design Symmetry, modeVal Mode, paddingVal Padding, length int, label, iv string) (string, error) {
-	var err error
+func (client *KadpClient) Encipher(req *EncipherRequest) (string, error) {
 
-	if _, ok := client.keyMap[label]; !ok {
-		err = client.getKey(length, label)
-		if err != nil {
-			return "", err
-		}
+	if req.Plaintext == nil {
+		return "", errors.New("plaintext cannot be empty")
 	}
-	key := client.keyMap[label]
+	key, err := client.keyProcessor.retrieveOrFetchDekKey(req.Label, req.CipherKey)
+	if err != nil {
+		return "", fmt.Errorf("获取dek密钥失败: %w", err)
+	}
 
 	var ciphertext string
 
-	switch modeVal {
+	switch req.Mode {
 	case CBC:
-		if paddingVal == NoPadding {
-			ciphertext, err = aseCbcNoPadEncrypt(plaintext, []byte(iv), key, design)
+		if req.Padding == NoPadding {
+			ciphertext, err = aseCbcNoPadEncrypt(req, key)
 		} else {
-			ciphertext, err = aseCbcPaddingEncrypt(plaintext, []byte(iv), key, paddingVal, design)
+			ciphertext, err = aseCbcPaddingEncrypt(req, key)
 		}
 	case CTR:
-		if paddingVal == NoPadding {
-			ciphertext, err = aesCtrNoPadEncrypt(plaintext, []byte(iv), key, design)
+		if req.Padding == NoPadding {
+			ciphertext, err = aesCtrNoPadEncrypt(req, key)
 		} else {
-			ciphertext, err = aesCtrPaddingEncrypt(plaintext, []byte(iv), key, paddingVal, design)
+			ciphertext, err = aesCtrPaddingEncrypt(req, key)
 		}
 	case ECB:
-		if paddingVal == NoPadding {
-			ciphertext, err = aesEcbNoPadEncrypt(plaintext, key, design)
+		if req.Padding == NoPadding {
+			ciphertext, err = aesEcbNoPadEncrypt(req, key)
 		} else {
-			ciphertext, err = aesEcbPaddingEncrypt(plaintext, key, paddingVal, design)
+			ciphertext, err = aesEcbPaddingEncrypt(req, key)
 		}
 
 	case CFB:
-		if paddingVal == NoPadding {
-			ciphertext, err = aesCfbNoPadEncrypt(plaintext, []byte(iv), key, design)
+		if req.Padding == NoPadding {
+			ciphertext, err = aesCfbNoPadEncrypt(req, key)
 		} else {
-			ciphertext, err = aesCfbPaddingEncrypt(plaintext, []byte(iv), key, paddingVal, design)
+			ciphertext, err = aesCfbPaddingEncrypt(req, key)
 		}
 	case OFB:
-		if paddingVal == NoPadding {
-			ciphertext, err = aesOfbNoPadEncrypt(plaintext, []byte(iv), key, design)
+		if req.Padding == NoPadding {
+			ciphertext, err = aesOfbNoPadEncrypt(req, key)
 		} else {
-			ciphertext, err = aesOfbPaddingEncrypt(plaintext, []byte(iv), key, paddingVal, design)
+			ciphertext, err = aesOfbPaddingEncrypt(req, key)
 		}
 	case CGM:
-		if paddingVal == NoPadding {
-			ciphertext, err = aesGcmNoPadEncrypt(plaintext, key, design)
+		if req.Padding == NoPadding {
+			ciphertext, err = aesGcmNoPadEncrypt(req, key)
 		} else {
-			ciphertext, err = aesGcmPaddingEncrypt(plaintext, key, paddingVal, design)
+			ciphertext, err = aesGcmPaddingEncrypt(req, key)
 		}
 	}
 
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("加密失败: %w", err)
 	}
 
 	return ciphertext, err
 }
 
-func (client *KadpClient) Decipher(ciphertext string, design Symmetry, modeVal Mode, paddingVal Padding, length int, label, iv string) (string, error) {
-	var err error
-
-	if _, ok := client.keyMap[label]; !ok {
-		err = client.getKey(length, label)
-		if err != nil {
-			return "", err
-		}
+func (client *KadpClient) Decipher(req *DecryptRequest) ([]byte, error) {
+	if req.Ciphertext == "" {
+		return nil, errors.New("ciphertext cannot be empty")
 	}
-	key := client.keyMap[label]
+	key, err := client.keyProcessor.retrieveOrFetchDekKey(req.Label, req.CipherKey)
+	if err != nil {
+		return nil, fmt.Errorf("获取dek密钥失败: %w", err)
+	}
 
-	var plaintext string
-	switch modeVal {
+	var plaintext []byte
+	switch req.Mode {
 	case CBC:
-		if paddingVal == NoPadding {
-			plaintext, err = aseCbcNoPadDecrypt(ciphertext, key, []byte(iv), design)
+		if req.Padding == NoPadding {
+			plaintext, err = aseCbcNoPadDecrypt(req, key)
 		} else {
-			plaintext, err = aseCbcPaddingDecrypt(ciphertext, key, []byte(iv), paddingVal, design)
+			plaintext, err = aseCbcPaddingDecrypt(req, key)
 		}
 
 	case CTR:
-		if paddingVal == NoPadding {
-			plaintext, err = aesCtrNoPadDecrypt(ciphertext, key, []byte(iv), design)
+		if req.Padding == NoPadding {
+			plaintext, err = aesCtrNoPadDecrypt(req, key)
 		} else {
-			plaintext, err = aesCtrPaddingDecrypt(ciphertext, key, []byte(iv), paddingVal, design)
+			plaintext, err = aesCtrPaddingDecrypt(req, key)
 		}
 	case ECB:
-		if paddingVal == NoPadding {
-			plaintext, err = aesEcbNoPadDecrypt(ciphertext, key, design)
+		if req.Padding == NoPadding {
+			plaintext, err = aesEcbNoPadDecrypt(req, key)
 		} else {
-			plaintext, err = aesEcbPaddingDecrypt(ciphertext, key, paddingVal, design)
+			plaintext, err = aesEcbPaddingDecrypt(req, key)
 		}
 	case CFB:
-		if paddingVal == NoPadding {
-			plaintext, err = aesCfbNoPadDecrypt(ciphertext, key, []byte(iv), design)
+		if req.Padding == NoPadding {
+			plaintext, err = aesCfbNoPadDecrypt(req, key)
 		} else {
-			plaintext, err = aesCfbPaddingDecrypt(ciphertext, key, []byte(iv), paddingVal, design)
+			plaintext, err = aesCfbPaddingDecrypt(req, key)
 		}
 	case OFB:
-		if paddingVal == NoPadding {
-			plaintext, err = aesOfbNoPadDecrypt(ciphertext, key, []byte(iv), design)
+		if req.Padding == NoPadding {
+			plaintext, err = aesOfbNoPadDecrypt(req, key)
 		} else {
-			plaintext, err = aesOfbPaddingDecrypt(ciphertext, key, []byte(iv), paddingVal, design)
+			plaintext, err = aesOfbPaddingDecrypt(req, key)
 		}
 	case CGM:
-		if paddingVal == NoPadding {
-			plaintext, err = aesGcmNoPadDecrypt(ciphertext, key, design)
+		if req.Padding == NoPadding {
+			plaintext, err = aesGcmNoPadDecrypt(req, key)
 		} else {
-			plaintext, err = aesGcmPaddingDecrypt(ciphertext, key, paddingVal, design)
+			plaintext, err = aesGcmPaddingDecrypt(req, key)
 		}
-
 	}
 
 	if err != nil {
-		return "", err
+		return nil, fmt.Errorf("解密失败: %w", err)
 	}
 
 	return plaintext, err
 }
 
 func (client *KadpClient) AsymmetricKeyPair(design Asymmetric) (publicKey string, privateKey string, err error) {
-	var pub string
-	var pri string
-	var errs error
 
 	switch design {
 	case RSA:
-		pub, pri, errs = rsaKeyGenerator()
-		if errs != nil {
-			return "", "", errs
+		publicKey, privateKey, err = rsaKeyGenerator()
+		if err != nil {
+			return "", "", fmt.Errorf("密钥对生成失败: %w", err)
 		}
 	case SM2:
-		pub, pri, errs = sm2GenerateKey()
-		if errs != nil {
-			return "", "", errs
+		publicKey, privateKey, err = sm2GenerateKey()
+		if err != nil {
+			return "", "", fmt.Errorf("密钥对生成失败: %w", err)
 		}
 	default:
-		errs = fmt.Errorf("invalid choose value")
-		return "", "", errs
+		return "", "", errors.New("invalid choose value")
 	}
 
-	return pub, pri, nil
+	return publicKey, privateKey, nil
 }
 
-func (client *KadpClient) AsymmetricPubEncrypt(plaintext string, design Asymmetric, publicKey string) (string, error) {
+func (client *KadpClient) AsymmetricEncrypt(req *AsymmetricEncryptRequest) (string, error) {
 
 	var ciphertext string
 	var err error
-	switch design {
+	switch req.Algorithm {
 	case RSA:
-		ciphertext, err = rsaEncryptWithPublicKey(publicKey, plaintext)
+		ciphertext, err = rsaEncryptWithPublicKey(req.PublicKey, req.Plaintext)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("加密失败: %w", err)
 		}
 	case SM2:
-		ciphertext, err = sm2PubEncrypt(publicKey, plaintext)
+		ciphertext, err = sm2PubEncrypt(req.PublicKey, req.Plaintext)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("加密失败: %w", err)
 		}
 	default:
-		err = fmt.Errorf("invalid choose value")
-		return "", err
+		return "", errors.New("invalid choose value")
 	}
 
 	return ciphertext, nil
 }
 
-func (client *KadpClient) AsymmetricPriDecrypt(ciphertext string, design Asymmetric, privateKey string) (string, error) {
+func (client *KadpClient) AsymmetricDecrypt(req *AsymmetricDecryptRequest) (string, error) {
 
 	var plaintext string
 	var err error
-	switch design {
+	switch req.Algorithm {
 	case RSA:
-		plaintext, err = rsaDecryptWithPrivateKey(privateKey, ciphertext)
+		plaintext, err = rsaDecryptWithPrivateKey(req.PrivateKey, req.Ciphertext)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("解密失败: %w", err)
 		}
 	case SM2:
-		plaintext, err = sm2PriDecrypt(privateKey, ciphertext)
+		plaintext, err = sm2PriDecrypt(req.PrivateKey, req.Ciphertext)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("解密失败: %w", err)
 		}
 	default:
-		err = fmt.Errorf("invalid choose value")
-		return "", err
+		return "", errors.New("invalid choose value")
 	}
 
 	return plaintext, nil
 }
 
-func (client *KadpClient) SM2Signature(plaintext, privateKey string, uid []byte) (r, s string, err error) {
+func (client *KadpClient) SM2Sign(req *SM2SignRequest) (r, s string, err error) {
 
-	r, s, errs := sm2Sign(privateKey, []byte(plaintext), uid)
+	r, s, errs := sm2Sign(req.PrivateKey, []byte(req.Plaintext), req.Uid)
 	if errs != nil {
 		return "", "", errs
 	}
@@ -623,9 +477,9 @@ func (client *KadpClient) SM2Signature(plaintext, privateKey string, uid []byte)
 	return r, s, nil
 }
 
-func (client *KadpClient) SM2Verify(plaintext, publicKey, r, s string, uid []byte) (bool, error) {
+func (client *KadpClient) SM2Verify(req *SM2VerifyRequest) (bool, error) {
 
-	VerifyBool, err := sm2Verify(publicKey, []byte(plaintext), uid, r, s)
+	VerifyBool, err := sm2Verify(req.PublicKey, []byte(req.Plaintext), req.Uid, req.R, req.S)
 	if err != nil {
 		return VerifyBool, err
 	}
@@ -633,9 +487,9 @@ func (client *KadpClient) SM2Verify(plaintext, publicKey, r, s string, uid []byt
 	return VerifyBool, nil
 }
 
-func (client *KadpClient) RsaSignature(plaintext, privateKey string) (string, error) {
+func (client *KadpClient) RsaSign(req *RsaSignRequest) (string, error) {
 
-	sign, err := rsaSign(privateKey, []byte(plaintext))
+	sign, err := rsaSign(req.PrivateKey, []byte(req.Plaintext))
 	if err != nil {
 		return "", err
 	}
@@ -643,9 +497,9 @@ func (client *KadpClient) RsaSignature(plaintext, privateKey string) (string, er
 	return sign, nil
 }
 
-func (client *KadpClient) RsaVerify(plaintext, SignatureText, publicKey string) (bool, error) {
+func (client *KadpClient) RsaVerify(req *RsaVerifyRequest) (bool, error) {
 
-	VerifyBool, err := rsaVerify(publicKey, SignatureText, []byte(plaintext))
+	VerifyBool, err := rsaVerify(req.PublicKey, req.Signature, []byte(req.Plaintext))
 	if err != nil {
 		return VerifyBool, err
 	}
@@ -658,52 +512,37 @@ func (client *KadpClient) DigestEncrypt(plaintext string) string {
 	return cipherText
 }
 
-func (client *KadpClient) Hmac(message []byte, label string, length int) (string, error) {
-	var err error
-
-	if _, ok := client.keyMap[label]; !ok {
-		err = client.getKey(length, label)
-		if err != nil {
-			return "", err
-		}
+func (client *KadpClient) Hmac(req *HmacRequest) (string, error) {
+	key, err := client.keyProcessor.retrieveOrFetchDekKey(req.Label, req.CipherKey)
+	if err != nil {
+		return "", fmt.Errorf("获取dek密钥失败: %w", err)
 	}
-	key := client.keyMap[label]
-
-	cipherText := generateHMAC([]byte(key), message)
+	cipherText := generateHMAC(key, req.Message)
 
 	return cipherText, nil
 }
-func (client *KadpClient) HmacVerify(message []byte, hmacVal, label string, length int) (bool, error) {
-	var err error
-
-	if _, ok := client.keyMap[label]; !ok {
-		err = client.getKey(length, label)
-		if err != nil {
-			return false, err
-		}
-	}
-	key := client.keyMap[label]
-
-	valid, err := verifyIntegrity([]byte(key), message, hmacVal)
+func (client *KadpClient) HmacVerify(req *HmacVerifyRequest) (bool, error) {
+	key, err := client.keyProcessor.retrieveOrFetchDekKey(req.Label, req.CipherKey)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("获取dek密钥失败: %w", err)
 	}
-
+	valid, err := verifyIntegrity(key, req.Message, req.HmacVal)
+	if err != nil {
+		return false, fmt.Errorf("验证失败: %w", err)
+	}
 	return valid, nil
 }
 
 func (client *KadpClient) SHASum(message []byte, shaHash Hash) (string, error) {
 
 	var cipherText string
-	var err error
 	switch shaHash {
 	case Sha1:
 		cipherText = sha1Sum(message)
 	case Sha256:
 		cipherText = sha256Sum(message)
 	default:
-		err = fmt.Errorf("invalid choose value")
-		return "", err
+		return "", errors.New("invalid choose value")
 	}
 	return cipherText, nil
 }

@@ -95,3 +95,13 @@ func SortJSONKeysByASCII(jsonStr string) (reqCont string, err error) {
 	str = strings.TrimRight(str, "&")
 	return str, nil
 }
+
+// GenerateRandomBytes 生成随机字节切片
+func GenerateRandomBytes(size int) ([]byte, error) {
+	bytes := make([]byte, size)
+	_, err := rand.Read(bytes)
+	if err != nil {
+		return nil, err
+	}
+	return bytes, nil
+}

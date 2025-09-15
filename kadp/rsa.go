@@ -48,11 +48,6 @@ func rsaKeyGenerator() (publicKeyBase64, privateKeyBase64 string, err error) {
 }
 
 func rsaEncryptWithPublicKey(publicKey, plaintext string) (string, error) {
-	//// 解码公钥
-	//publicKeyBytes, err := base64.StdEncoding.DecodeString(publicKey)
-	//if err != nil {
-	//	return "", err
-	//}
 
 	block, _ := pem.Decode([]byte(publicKey))
 	if block == nil {

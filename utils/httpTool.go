@@ -24,6 +24,7 @@ const (
 )
 
 func SendRequest(method, url string, header map[string]string, params interface{}) (interface{}, error) {
+
 	// 创建自定义的TLS配置，禁用证书验证
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
@@ -188,6 +189,11 @@ func LoginRequest(method, url string, header map[string]string, params interface
 }
 
 func AuthSendRequest(method, url string, params interface{}) (interface{}, error) {
+	// 参数验证
+	if url == "" {
+		return nil, errors.New("URL不能为空")
+	}
+
 	// 创建自定义的TLS配置，禁用证书验证
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
@@ -198,40 +204,60 @@ func AuthSendRequest(method, url string, params interface{}) (interface{}, error
 		TLSClientConfig: tlsConfig,
 	}
 
-	data, err := json.Marshal(params)
-	if err != nil {
-		return nil, err
+	// 序列化请求参数
+	var paramsBuffer *bytes.Buffer
+	if params != nil {
+		data, err := json.Marshal(params)
+		if err != nil {
+			return nil, fmt.Errorf("参数序列化失败: %w", err)
+		}
+		paramsBuffer = bytes.NewBuffer(data)
+	} else {
+		paramsBuffer = bytes.NewBuffer([]byte{})
 	}
-	paramsBuffer := bytes.NewBuffer(data)
-	client := &http.Client{Transport: tr}
 
+	// 创建HTTP客户端
+	client := &http.Client{
+		Transport: tr,
+		Timeout:   30 * time.Second, // 添加超时控制
+	}
+
+	// 创建HTTP请求
 	req, err := http.NewRequest(method, url, paramsBuffer)
 	if err != nil {
-
-		return nil, err
+		return nil, fmt.Errorf("创建请求失败: %w", err)
 	}
 
+	// 设置请求头
 	req.Header.Set("Content-Type", "application/json;charset=utf-8")
 
+	// 发送请求
 	response, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("发送请求失败: %w", err)
+	}
+	defer func() {
+		if closeErr := response.Body.Close(); closeErr != nil {
+			logger.Warnf("关闭响应体失败: %v", closeErr)
+		}
+	}()
+
+	// 检查HTTP状态码
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		return nil, fmt.Errorf("HTTP请求失败，状态码: %d", response.StatusCode)
 	}
 
-	defer response.Body.Close()
-	// 读取响应体
+	// 读取并解析响应体
 	var result map[string]interface{}
-
-	err = json.NewDecoder(response.Body).Decode(&result)
-	if err != nil {
-		logger.Error("Response decoding error:", err)
-		return nil, err
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("响应解析失败: %w", err)
 	}
-	// 处理响应数据
-	logger.Debug("Response Data:", result)
+
+	// 记录响应数据
+	logger.Debugf("响应数据: %+v", result)
+
 	return result, nil
 }
-
 func HttpTlsPostReq(url string, params interface{}) (interface{}, error) {
 	//启用双向认证
 	config, err := createClientGMTLSConfig(CliKey1, CliCrt1, []string{CaCrt1})

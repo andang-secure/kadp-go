@@ -6,9 +6,9 @@ import (
 	"log"
 )
 
-func ff3Encrypt(plaintext, key, tweak string, radix, start, end int, alphabet ...interface{}) (string, error) {
+func ff3Encrypt(plaintext string, key, tweak []byte, radix, start, end int, alphabet ...interface{}) (string, error) {
 
-	ff3, err := ubiq.NewFF3_1([]byte(key), []byte(tweak), radix, alphabet...)
+	ff3, err := ubiq.NewFF3_1(key, tweak, radix, alphabet...)
 	if err != nil {
 		fmt.Println("Failed to create FF3 encrypter:", err)
 		return "", err
@@ -90,10 +90,10 @@ func ff3Encrypt(plaintext, key, tweak string, radix, start, end int, alphabet ..
 //	return before + decryptedText + after, nil
 //}
 
-func ff3Decrypt(ciphertext, key, tweak string, radix, start, end int, alphabet ...interface{}) (string, error) {
+func ff3Decrypt(ciphertext string, key, tweak []byte, radix, start, end int, alphabet ...interface{}) (string, error) {
 
 	// 创建 FF1 解密器
-	ff3, err := ubiq.NewFF3_1([]byte(key), []byte(tweak), radix, alphabet...)
+	ff3, err := ubiq.NewFF3_1(key, tweak, radix, alphabet...)
 	if err != nil {
 		log.Println("Failed to create FF3 decrypter:", err)
 		return "", err

@@ -2,9 +2,9 @@ package test
 
 import (
 	"fmt"
+	"github.com/andang-secure/kadp-go/configs"
 	"github.com/andang-secure/kadp-go/kadp"
-	"github.com/go-irain/logger"
-	"log"
+	logger "github.com/sirupsen/logrus"
 	"testing"
 )
 
@@ -14,99 +14,184 @@ func TestKadp(t *testing.T) {
 	//token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEMQiHkMEfcYVm5LCUFDACn/4uYJNqpgHbrttZD1lDkyDuKsYM0MixYY2ZkImWaSB72eZX0pGbMKoOk5e4nAvIRcHEcQc8Lk/BmHMBRmK10wsziUiedJJB5rDzTEy2cC1/+v5f2gsHfXNjEY0aJmvegzuD2PKC72TTofMnvzJz2abUUafgTjCRnGe3x4iTN5ZKesS0JhbLLai/aJeKzdyq79J9VrY9WrZIb9CbEm4Ivsoi23z/8h+ZpNbPnRSrQcDp5Ad7EXJR30thzPxt9vzRTjElJ0bqppU9TQJDgRqKcF3Zx0nx2fynzTZabN/EKSbcw=="
 	//myClient, err := kadp.NewKADPClient(url, token, "QVSxoBH+SsUH9Vl3UC3D7YGV4tw5vaI7T/joivh/7FECvH06rcTwJvHjxvzdy8cD", "keystore.jks", "123456")
 
+	logger.SetLevel(logger.DebugLevel)
 	url := "https://192.168.0.192"
-	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEMQiHkMEfcYVm5LCUFDACn/4uYJNqpgHbrttZD1lDkyDuKsYM0MixYY2ZkImWaSB72eZX0pGbMKoOk5e4nAvIRcHEcQc8Lk/BmHMBRmK10wsziUiedJJB5rDzTEy2cC1/+v5f2gsHfXNjEY0aJmvegzuD2PKC72TTofMnvzJz2abUUafgTjCRnGe3x4iTN5ZKWyPkTDAgePhK8OQvIyF5gFGnFYd/Fu2RY76GnJFqftOZhM6fg5K/7dBMa1jKkMwt6FuG61Kq7VXgobTJ+TZt/MXO/AiI0Z9WS3BpaMMyHRF/NyYFsPM/SpfLTNFGdTt1orN5o/IpXm/c4IicLobzqByvKfTYeA7ee5cKA0BxLy1H3uYabALKDa+7A2DK0Q97Q=="
-	myClient, err := kadp.NewKADPClient(url, token, "AUVKkRajgbYOeUClv5Sfp18ExdQ0Nbz/tPoBRkKGKJBoriQMgZPgSGyx0dGJCwvK", "keystore.jks", "123456")
+	RegisterToken := "QsRkaK04CubMKf9siuCqTw+Poamb29zujiJincm+wr2+E7ILG5WN9S3YH6x4gacD"
+	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEGIr3RnQLyJOw/V3WgJRDWtvp4u+t85j0tjhpItzfPZsxD2X+aswNvd/UXEPvxU1dclijOAOKNgpekBG1xVHgHRFUlKapFGg7ZDjgZSC7LOaloyhy2WPVcPkrPiB4WIQx4p/14ulzFl59zg3oa1QeV0X94cZuN83Du0kRqCQo5jXBQHHkKyjR+weKTcObCC1zBHjh7QYjenFEp4EDBRxZQ6i+J5xG0DFguu9Qe7dgSyznrD1nXVdMCkBW1twW7XwwCGumVAjE8fe4tsrzH79hBH9U8EmZJxKGZVFofaj+jZLHYBufW5JR4xvWBkQgnkjlF/clLc3ugQMXjoclehyALKFadE7g2XKQHHsQf1H5nRHnuvpJzmEjDbVGNyUgtVH68WHLTSCxhoEKomHWRiC4st0WkfstV6bog4oMPI758LriMK3DWxb/i5nIa3ynJBzDG1zFQYBZLlxrwp9Cb8TmZM="
+	myClient, err := kadp.NewKADPClient(&configs.KmsConfig{
+		Domain:        url,
+		Credential:    token,
+		RegisterToken: RegisterToken,
+	})
+	if err != nil {
+		t.Error(err)
+	}
 
 	//url := "https://192.168.0.135:8390"
 	//token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEP/z+clh1zM1fMnHmIVmepiB8y6IQC2GTmUVA7bfhfsbreTWy59jhDOQ+EnFLSau0R4NOLZv7ZopZZ88B5KuIde6HR7h4NvY4Rm8xrSVb17K/YfoYS59P4LOBzMjB4aSk74Z7C5Kk1nCosQBN7LH6eBewZKUAquBi4iXtw3MNpR+SCOoJKzZiWFWPyffmsb9MLpEWC7+VqzFdiPMsvA781aO1LbuU4UA/VpOzwoXIVuw8UskLbjhLNOG0ot6mHUKjiohmxGtYAmnac/ylx8/Fus6n69HzGCxdpm/406VnPz1eiCQvW5Zc8CNrcBeZQCdutCFCxNyNmPBm4e0t8pcqqjxeDacaWMCLnp8cvPKalQppcpVCVOGqHjhLTKbRoCOzPbR9X3I7GBii3gEbQg3Fqb6pTSLSyG9+8vlauD11amb"
 	//myClient, err := kadp.NewKADPClient(url, token, "Fps7T/jRIevtJih8GVcp02HmTWRIis//Fqd8LbbiOaPYI0tcSI1mCeh7ecInQC77", "keystore.jks", "123456")
 
+	label := "kadp-1"
+	key, err := myClient.CreateCipherKey(16, label)
 	if err != nil {
-		fmt.Println(err)
-	}
-	str := "15191812322"
-	encrypt, err := myClient.FpeEncipher(str, kadp.FF1, "1234567", "0123456789", 16, "kadp1123122", 1, +8)
-	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
 
-	fmt.Println("FPE密文" + encrypt)
-	asdas := "asd密文是是1"
-	decipher, err := myClient.FpeDecipher(encrypt, kadp.FF1, "1234567", "0123456789", 16, "kadp1123122", 1, 8)
+	//FPE
+	str := "15191812322"
+	tweak := "1234567"
+	alphabet := "0123456789"
+	start := 0
+	end := 8
+	encrypt, err := myClient.FpeEncipher(&kadp.FpeEncipherRequest{
+		Plaintext: str,
+		CipherKey: key,
+		Fpe:       kadp.FF1,
+		Tweak:     tweak,
+		Alphabet:  alphabet,
+		Label:     label,
+		Start:     start,
+		End:       end,
+	})
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println("FPE密文：" + encrypt)
+
+	decipher, err := myClient.FpeDecipher(&kadp.FpeDecipherRequest{
+		Ciphertext: encrypt,
+		CipherKey:  key,
+		Fpe:        kadp.FF1,
+		Tweak:      tweak,
+		Alphabet:   alphabet,
+		Label:      label,
+		Start:      start,
+		End:        end,
+	})
+	if err != nil {
+		t.Error(err)
+	}
 	fmt.Println("FPE明文：" + decipher)
 
-	encipher, err := myClient.Encipher([]byte(asdas), kadp.SM4, kadp.ECB, kadp.ISO10126Padding, 16, "kadp112", "12345678912345678")
+	//AES
+	data := "微信文档"
+	iv := "12345678912345678"
+	encipher, err := myClient.Encipher(&kadp.EncipherRequest{
+		Plaintext: []byte(data),
+		CipherKey: key,
+		Algorithm: kadp.AES,
+		Mode:      kadp.ECB,
+		Padding:   kadp.PKCS5Padding,
+		Label:     label,
+		IV:        iv,
+	})
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
 	fmt.Println("AES密文" + encipher)
 
-	plaintext, err := myClient.Decipher(encipher, kadp.SM4, kadp.ECB, kadp.ISO10126Padding, 16, "kadp112", "12345678912345678")
+	plaintext, err := myClient.Decipher(&kadp.DecryptRequest{
+		Ciphertext: encipher,
+		CipherKey:  key,
+		Algorithm:  kadp.AES,
+		Mode:       kadp.ECB,
+		Padding:    kadp.PKCS5Padding,
+		Label:      label,
+		IV:         iv,
+	})
 
 	if err != nil {
-		return
+		t.Error(err)
 	}
-	fmt.Println("解密" + plaintext)
-	log.Println(plaintext)
+	fmt.Println("解密", string(plaintext))
 
+	//非对称加解密
 	pub, pri, err := myClient.AsymmetricKeyPair(kadp.SM2)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
 	fmt.Println("公钥：", pub)
 	fmt.Println("私钥：", pri)
-	publa := "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAE6uPJNtK5mFj8QjUSJd2/R0Zag4k0\ndpQoTLkyX/8UuyTqGuZK35qR5/qQOJot01M9gAIowUokTxWobQ8mTnE28Q==\n-----END PUBLIC KEY-----"
 
-	publicEncrypt, err := myClient.AsymmetricPubEncrypt("微信文档", kadp.SM2, publa)
+	publicEncrypt, err := myClient.AsymmetricEncrypt(&kadp.AsymmetricEncryptRequest{
+		Plaintext: data,
+		Algorithm: kadp.SM2,
+		PublicKey: pub,
+	})
+
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
-	fmt.Println("公钥加密过后密文：", publicEncrypt)
+	fmt.Println("非对称加密密文：", publicEncrypt)
 
-	sadd := "MHYCIQCSJTNUY/upuKc9/MW6cVLlnUO8O4/2p1eq+gkpbKnW2gIhAJqKw1y1Fu1eQ9bMHyjd4rAe8L280gI8AuWQj34aBLXOBCBQat5J4r/cYKxKJ53qm2rywjpdw7+UKOCWxNP51gXGkQQMgEW9q4OQRQVY6wua"
-	decrypt, err := myClient.AsymmetricPriDecrypt(sadd, kadp.SM2, pri)
+	decrypt, err := myClient.AsymmetricDecrypt(&kadp.AsymmetricDecryptRequest{
+		Ciphertext: publicEncrypt,
+		Algorithm:  kadp.SM2,
+		PrivateKey: pri,
+	})
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
 	fmt.Println("私钥解密：", decrypt)
 
-	r, s, err := myClient.SM2Signature("Wdswd", pri, nil)
+	//签名验签
+	uid := []byte("1")
+	r, s, err := myClient.SM2Sign(&kadp.SM2SignRequest{
+		Plaintext:  data,
+		PrivateKey: pri,
+		Uid:        uid,
+	})
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
 	fmt.Println("签名:", r, s)
 
-	verify, err := myClient.SM2Verify("Wdswd", pub, r, s, nil)
+	verify, err := myClient.SM2Verify(&kadp.SM2VerifyRequest{
+		Plaintext: data,
+		PublicKey: pub,
+		R:         r,
+		S:         s,
+		Uid:       uid,
+	})
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
-	logger.Debug("验签:", verify)
+	fmt.Println("验签:", verify)
 
-	Hash := myClient.DigestEncrypt("wdad")
-	logger.Debug("摘要哈希：", Hash)
+	//sha256
+	Hash := myClient.DigestEncrypt(data)
+	fmt.Println("摘要哈希：", Hash)
 
-	hmacwd, err := myClient.Hmac([]byte("1234"), "kadp112", 16)
+	hash, err := myClient.Hmac(&kadp.HmacRequest{
+		CipherKey: key,
+		Message:   []byte(data),
+		Label:     label,
+	})
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
-	logger.Debug("Hmac值：", hmacwd)
+	fmt.Println("Hmac值：", hash)
 
-	hmacVerify, err := myClient.HmacVerify([]byte("1234"), hmacwd, "kadp112", 16)
+	hmacVerify, err := myClient.HmacVerify(&kadp.HmacVerifyRequest{
+		CipherKey: key,
+		Message:   []byte(data),
+		Label:     label,
+		HmacVal:   hash,
+	})
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
-	logger.Debug("验证Hmac成功：", hmacVerify)
+	fmt.Println("验证Hmac成功：", hmacVerify)
 
-	SHA1Val, err := myClient.SHASum([]byte("1234"), kadp.Sha1)
+	SHA1Val, err := myClient.SHASum([]byte(data), kadp.Sha1)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
-	logger.Debug("SHA1计算：", SHA1Val)
+	fmt.Println("SHA1计算：", SHA1Val)
 
-	SHA256Val, err := myClient.SHASum([]byte("1234"), kadp.Sha256)
+	SHA256Val, err := myClient.SHASum([]byte(data), kadp.Sha256)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
-	logger.Debug("SHA256计算：", SHA256Val)
+	fmt.Println("SHA256计算：", SHA256Val)
 }

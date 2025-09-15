@@ -5,9 +5,9 @@ import (
 	"gitlab.com/ubiqsecurity/ubiq-fpe-go"
 )
 
-func ff1Encrypt(plaintext, key, tweak string, radix, start, end int, alphabet ...interface{}) (string, error) {
+func ff1Encrypt(plaintext string, key, tweak []byte, radix, start, end int, alphabet ...interface{}) (string, error) {
 
-	ff1, err := ubiq.NewFF1([]byte(key), []byte(tweak), 0, 0, radix, alphabet...)
+	ff1, err := ubiq.NewFF1(key, tweak, 0, 0, radix, alphabet...)
 	if err != nil {
 		return "", err
 	}
@@ -95,11 +95,10 @@ func ff1Encrypt(plaintext, key, tweak string, radix, start, end int, alphabet ..
 //	return before + decryptedText + after, nil
 //}
 
-func ff1Decrypt(ciphertext, key, tweak string, radix, start, end int, alphabet ...interface{}) (string, error) {
+func ff1Decrypt(ciphertext string, key, tweak []byte, radix, start, end int, alphabet ...interface{}) (string, error) {
 
-	ff1, err := ubiq.NewFF1([]byte(key), []byte(tweak), 0, 0, radix, alphabet...)
+	ff1, err := ubiq.NewFF1(key, tweak, 0, 0, radix, alphabet...)
 	if err != nil {
-		fmt.Println("Failed to create FF1 decrypter:", err)
 		return "", err
 	}
 
@@ -117,7 +116,6 @@ func ff1Decrypt(ciphertext, key, tweak string, radix, start, end int, alphabet .
 	// 解密字符串
 	decryptedText, err := ff1.Decrypt(middle, nil)
 	if err != nil {
-		fmt.Println("Decryption failed:", err)
 		return "", err
 	}
 
