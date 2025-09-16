@@ -8,7 +8,7 @@ import (
 	"github.com/andang-secure/kadp-go/configs"
 	"github.com/andang-secure/kadp-go/order"
 	"github.com/andang-secure/kadp-go/utils"
-	"github.com/andang-secure/kadp-go/utils/aes_alg"
+	"github.com/andang-secure/kadp-go/utils/cache"
 	"github.com/mitchellh/mapstructure"
 	logger "github.com/sirupsen/logrus"
 	"strings"
@@ -74,7 +74,6 @@ func (k *keyProcessor) fetchAndCacheKek(label string, length int) ([]byte, error
 	if err != nil {
 		return nil, err
 	}
-	logger.Debug("kek:", string(decodeKek))
 
 	keyEntry := utils.CreateKeyEntry(decodeKek)
 
@@ -96,19 +95,107 @@ func (k *keyProcessor) decryptKek(encryptedKek string) ([]byte, error) {
 	return []byte(key), nil
 }
 
-func (k *keyProcessor) decryptDek(encryptedDek, kek []byte) ([]byte, error) {
-	logger.Debug("decryptDek", len(kek))
+//
+//func (k *keyProcessor) decryptDek(encryptedDek, kek []byte) ([]byte, error) {
+//	logger.Debug("decryptDek", len(kek))
+//
+//	decryptKey, err := aes_alg.AesCBCDecrypt(encryptedDek, kek, kek[:16])
+//	if err != nil {
+//		return nil, fmt.Errorf("解密密钥失败: %w", err)
+//	}
+//	logger.Debug("decryptDek", len(decryptKey))
+//	return decryptKey, err
+//}
 
-	decryptKey, err := aes_alg.AesCBCDecrypt(encryptedDek, kek, kek[:16])
+//func (k *keyProcessor) retrieveOrFetchDekKey(label string, cipherKey []byte) ([]byte, error) {
+//	logger.Debug("密文密钥开始解密", len(cipherKey))
+//
+//	kek, err := utils.NewKeyStoreObj().RetrieveSecretKey(label)
+//	if err != nil {
+//		logger.Debug("密钥不存在", err.Error())
+//		kek, err = k.fetchAndCacheKek(label, 16)
+//		if err != nil {
+//			return nil, err
+//		}
+//	}
+//
+//	decryptKey, err := k.decryptDek(cipherKey, kek)
+//	if err != nil {
+//		return nil, fmt.Errorf("解密密钥失败: %w", err)
+//	}
+//	logger.Debug("密文密钥解密成功", len(decryptKey))
+//	return decryptKey, nil
+//}
+
+//func (k *keyProcessor) encryptDek(encryptedDek, kek []byte) ([]byte, error) {
+//	logger.Debug("encryptDek", len(kek))
+//	encryptKey, err := aes_alg.AesCBCEncrypt(encryptedDek, kek, kek[:16])
+//	if err != nil {
+//		return nil, fmt.Errorf("加密密钥失败: %w", err)
+//	}
+//	return encryptKey, err
+//}
+
+func (k *keyProcessor) decryptKmsKek(kek []byte) ([]byte, error) {
+	logger.Debug("decryptDek", len(kek))
+	logger.Debug("decryptDek", base64.StdEncoding.EncodeToString(kek))
+
+	result, err := utils.SendRequest(configs.POST, k.domain+configs.DEK_URL, k.header, order.KekData{
+		Cont:    base64.StdEncoding.EncodeToString(kek),
+		Version: "0",
+	})
+
+	logger.Debug("===============start DEK encryption ...=================")
+	logger.Debug(result)
+	if err != nil {
+		return nil, fmt.Errorf("连接失败")
+	}
+
+	// 防止空指针
+	if result == nil {
+		return nil, errors.New("响应数据为空")
+	}
+
+	// 类型断言并转换响应结果
+	resultMap, ok := result.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("响应数据格式错误")
+	}
+
+	// 将 map 转换为 kekRes 结构体（避免 Marshal/Unmarshal）
+	var kekRes order.KmsRes
+	if err := mapstructure.Decode(resultMap, &kekRes); err != nil {
+		return nil, fmt.Errorf("响应数据转换失败: %w", err)
+	}
+
+	// 检查业务状态码
+	if kekRes.Code != 0 {
+		return nil, fmt.Errorf("ksm server err: %s", kekRes.Msg) // 修正错误包装方式
+	}
+	logger.Debug("获取dek密文完毕", kekRes.Data)
+
+	//decryptedKek
+	dek, err := k.decryptKek(kekRes.Data)
 	if err != nil {
 		return nil, fmt.Errorf("解密密钥失败: %w", err)
 	}
-	logger.Debug("decryptDek", len(decryptKey))
-	return decryptKey, err
+	decodeDek, err := base64.StdEncoding.DecodeString(string(dek))
+	if err != nil {
+		return nil, fmt.Errorf("dek base64解密失败: %w", err)
+	}
+	logger.Debug("获取dek完毕=======", len(decodeDek))
+
+	logger.Debug("===============end DEK encryption ...=================")
+
+	return dek, err
 }
 
-func (k *keyProcessor) retrieveOrFetchDekKey(label string, cipherKey []byte) ([]byte, error) {
-	logger.Debug("密文密钥开始解密", len(cipherKey))
+func (k *keyProcessor) retrieveOrFetchDekKey(label string) ([]byte, error) {
+
+	if cachedKey, exists := cache.KeyCache.Retrieve(label); exists {
+		logger.Debugf("从缓存中获取密钥: %s", label)
+		return cachedKey, nil
+	}
 
 	kek, err := utils.NewKeyStoreObj().RetrieveSecretKey(label)
 	if err != nil {
@@ -118,19 +205,8 @@ func (k *keyProcessor) retrieveOrFetchDekKey(label string, cipherKey []byte) ([]
 			return nil, err
 		}
 	}
-	decryptKey, err := k.decryptDek(cipherKey, kek)
-	if err != nil {
-		return nil, fmt.Errorf("解密密钥失败: %w", err)
-	}
+	decryptKey, err := k.decryptKmsKek(kek)
+	cache.KeyCache.Store(label, decryptKey)
 	logger.Debug("密文密钥解密成功", len(decryptKey))
 	return decryptKey, nil
-}
-
-func (k *keyProcessor) encryptDek(encryptedDek, kek []byte) ([]byte, error) {
-	logger.Debug("encryptDek", len(kek))
-	encryptKey, err := aes_alg.AesCBCEncrypt(encryptedDek, kek, kek[:16])
-	if err != nil {
-		return nil, fmt.Errorf("加密密钥失败: %w", err)
-	}
-	return encryptKey, err
 }

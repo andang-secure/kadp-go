@@ -17,11 +17,13 @@ func TestKadp(t *testing.T) {
 	logger.SetLevel(logger.DebugLevel)
 	url := "http://192.168.0.194:8190"
 	RegisterToken := "IAx//zMaqjGzirfrS+09YnHqVrf/nZVQ5K+s3rnXqGhjDZ2wiTZZDJ13YgCtWDSC"
-	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaW5mbyI6IntcInVzZXJfaWRcIjo1NTMsXCJkb21haW5faWRcIjoxLFwiYWNjb3VudFwiOlwiYWRtaW5cIixcIlBhc3N3b3JkXCI6XCJlMjAxNjVkZDRiNWI2Y2NjZDM2YzBmZDA1YTQyYWJjMVwiLFwiZ3JvdXBzXCI6WzEsNSwyLDMsNyw2LDQsMTAsMTYsMTcsMTZdLFwiZ3JvdXBzX2tleVwiOm51bGwsXCJwcmlcIjpcIlwiLFwicHViXCI6XCJcIixcInNlc3Npb25fa2V5XCI6XCJcIn0ifQ.03JinUyxem-t4al_k7WQIem4kgqWyWo-hug8ogHRyHU"
+	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEMQiHkMEfcYVm5LCUFDACn/4uYJNqpgHbrttZD1lDkyDuKsYM0MixYY2ZkImWaSB72eZX0pGbMKoOk5e4nAvIRcHEcQc8Lk/BmHMBRmK10wsziUiedJJB5rDzTEy2cC1/+v5f2gsHfXNjEY0aJmvegzuD2PKC72TTofMnvzJz2abUUafgTjCRnGe3x4iTN5ZKUtx/89hfUahPcUD5H9hreRPVpFvEk/XV3yV3B3OhI2N1Lpops2R20qfdl/2VfKbhIklvHWEL1UoWmGUII6G4jOTr0FZoKOXwnlvasbTdkiFGgGI+EUgbgYh4+r8Z875ADNEF+Uwae1UWKHs7Brrf9pB/bvkrWJIr4q1bduMYMLb3sYjkjchlyfwd+5WIESIcAmQaB1V5ChLDSMOXudqAh9jnuibzNGkBjAcwMRTB+K0b5mTkwyXIJTUSIIHvco8IZLVoPWGrDX/nEamGuzqbGE="
 	myClient, err := kadp.NewKADPClient(&configs.KmsConfig{
-		Domain:        url,
-		Credential:    token,
-		RegisterToken: RegisterToken,
+		Domain:           url,
+		Credential:       token,
+		RegisterToken:    RegisterToken,
+		KeystoreFileName: "keystore1.jks",
+		KeystorePassword: "123456",
 	})
 	if err != nil {
 		t.Error(err)

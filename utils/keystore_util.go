@@ -24,18 +24,18 @@ func (k *KeyStoreObj) init() {
 
 	ks := keystore.New()
 
-	if _, err := os.Stat(configs.KeystoreFileName); os.IsNotExist(err) {
+	if _, err := os.Stat(KeystorePassword); os.IsNotExist(err) {
 		// 文件不存在，则创建新的 KeyStore 并保存到文件
 		CreateKeyStore(ks)
 	}
 
-	f, err := os.Open(configs.KeystoreFileName)
+	f, err := os.Open(KeystoreFileName)
 	if err != nil {
 		panic(err)
 	}
 	defer f.Close()
 
-	if err = ks.Load(f, []byte(configs.KeystorePassword)); err != nil {
+	if err = ks.Load(f, []byte(KeystorePassword)); err != nil {
 		panic(err)
 	}
 	k.cachingKeyStore = &ks
@@ -45,7 +45,7 @@ func (k *KeyStoreObj) StoreSecretKey(alias string, keyEntry keystore.PrivateKeyE
 	if k.cachingKeyStore == nil {
 		k.init()
 	}
-	f, err := os.Create(configs.KeystoreFileName)
+	f, err := os.Create(KeystoreFileName)
 	if err != nil {
 		return fmt.Errorf("failed to create keystore file: %v", err)
 	}
@@ -57,13 +57,13 @@ func (k *KeyStoreObj) StoreSecretKey(alias string, keyEntry keystore.PrivateKeyE
 		return fmt.Errorf("failed to store key entry: %v", err)
 	}
 
-	err = k.cachingKeyStore.Store(f, []byte(configs.KeystorePassword))
+	err = k.cachingKeyStore.Store(f, []byte(KeystorePassword))
 
 	if err != nil {
 		return fmt.Errorf("failed to store keystore: %v", err)
 	}
-	taskManager := NewTaskManager()
-	taskManager.ScheduleDeletionWithContext(k.cachingKeyStore, alias)
+	//taskManager := NewTaskManager()
+	//taskManager.ScheduleDeletionWithContext(k.cachingKeyStore, alias)
 	return err
 }
 

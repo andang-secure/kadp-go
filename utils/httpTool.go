@@ -24,7 +24,11 @@ const (
 )
 
 func SendRequest(method, url string, header map[string]string, params interface{}) (interface{}, error) {
-
+	marshal, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+	logger.Debug("请求参数:", string(marshal))
 	// 创建自定义的TLS配置，禁用证书验证
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,

@@ -7,6 +7,8 @@ import (
 	"github.com/andang-secure/kadp-go/configs"
 	"github.com/andang-secure/kadp-go/order"
 	"github.com/andang-secure/kadp-go/utils"
+	"github.com/andang-secure/kadp-go/utils/aes_alg"
+	"github.com/andang-secure/kadp-go/utils/cache"
 	"github.com/mitchellh/mapstructure"
 	logger "github.com/sirupsen/logrus"
 	"runtime"
@@ -42,13 +44,23 @@ type KadpClient struct {
 // NewKADPClient 初始化
 func NewKADPClient(config *configs.KmsConfig) (*KadpClient, error) {
 
+	decodeToken, err := base64.StdEncoding.DecodeString(config.Credential)
+	if err != nil {
+		return nil, fmt.Errorf("token base64 decode err")
+	}
+	decryptToken, err := aes_alg.AesDecrypt(decodeToken, []byte(configs.KEY))
+	if err != nil {
+		return nil, fmt.Errorf("解密密钥失败: %w", err)
+	}
+	logger.Debug("解析出Token", len(decryptToken))
 	KADPClient := &KadpClient{
 		config: config,
 		header: map[string]string{
-			configs.TOKEN: config.Credential,
+			configs.TOKEN: string(decryptToken),
 		},
 	}
-	var err error
+	utils.KeystoreFileName = config.KeystoreFileName
+	utils.KeystorePassword = config.KeystorePassword
 	KADPClient.authStatus, err = KADPClient.init()
 	if err != nil {
 		return nil, err
@@ -173,14 +185,6 @@ func (client *KadpClient) init() (bool, error) {
 		return false, fmt.Errorf("ksm server err: %s", authRes.Msg) // 修正错误包装方式
 	}
 
-	//decodeToken, err := base64.StdEncoding.DecodeString(authRes.Data.Token)
-	//if err != nil {
-	//	return false, fmt.Errorf("token base64 decode err")
-	//}
-	//decryptToken, err := aes_alg.AesCBCDecryptNoPad(decodeToken, []byte(configs.ANALYSIS_KEY), []byte(configs.ANALYSIS_KEY))
-	//if err != nil {
-	//	return false, fmt.Errorf("解密密钥失败: %w", err)
-	//}
 	client.keyProcessor = &keyProcessor{
 		privateKey: privateKey,
 		domain:     client.config.Domain,
@@ -204,6 +208,11 @@ func (client *KadpClient) CreateCipherKey(length int, label string) ([]byte, err
 	if length != 16 && length != 24 && length != 32 {
 		return nil, errors.New("key length must be 16, 24, or 32")
 	}
+	// 首先检查缓存中是否已有密钥
+	if cachedKey, exists := cache.KeyCache.Retrieve(label); exists {
+		logger.Debugf("从缓存中获取密钥: %s", label)
+		return cachedKey, nil
+	}
 	kek, err := utils.NewKeyStoreObj().RetrieveSecretKey(label)
 	if err != nil && kek == nil {
 		logger.Debug("* CreateCipherKey", len(kek))
@@ -213,22 +222,24 @@ func (client *KadpClient) CreateCipherKey(length int, label string) ([]byte, err
 			return nil, fmt.Errorf("获取kek密钥失败: %w", err)
 		}
 	}
+	deyKey, err := client.keyProcessor.decryptKmsKek(kek)
+	cache.KeyCache.Store(label, deyKey)
+	logger.Debug("* CreateCipherKey", len(deyKey))
+	//randomBytes, err := utils.GenerateRandomBytes(length)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//enyKey, err := client.keyProcessor.encryptDek(randomBytes, kek)
+	//if err != nil {
+	//	return nil, fmt.Errorf("加密dek密钥失败: %w", err)
+	//}
 
-	logger.Debug("* CreateCipherKey", len(kek))
-	randomBytes, err := utils.GenerateRandomBytes(length)
-	if err != nil {
-		return nil, err
-	}
-
-	enyKey, err := client.keyProcessor.encryptDek(randomBytes, kek)
-	if err != nil {
-		return nil, fmt.Errorf("加密dek密钥失败: %w", err)
-	}
-	logger.Debug("* 创建密文密钥", len(enyKey))
-	return enyKey, nil
+	logger.Debug("* 创建密文密钥", len(deyKey))
+	return deyKey, nil
 }
 
-func (client *KadpClient) FpeEncipher(req *FpeEncipherRequest) (string, error) {
+func (client *KadpClient) FpeEncipher(req *FpeEncipherRequest) (ciphertext string, err error) {
 	if !client.authStatus {
 		return "", errors.New("KMS authentication failed")
 	}
@@ -238,12 +249,13 @@ func (client *KadpClient) FpeEncipher(req *FpeEncipherRequest) (string, error) {
 	if len(req.Plaintext) < req.End {
 		return "", errors.New("结束位超出范围")
 	}
-	key, err := client.keyProcessor.retrieveOrFetchDekKey(req.Label, req.CipherKey)
+
+	// 从缓存中获取密钥
+	key, err := client.keyProcessor.retrieveOrFetchDekKey(req.Label)
 	if err != nil {
 		return "", fmt.Errorf("获取dek密钥失败: %w", err)
 	}
 
-	var ciphertext string
 	fpe := req.Fpe
 	switch fpe {
 	case FF1:
@@ -260,7 +272,7 @@ func (client *KadpClient) FpeEncipher(req *FpeEncipherRequest) (string, error) {
 	return ciphertext, err
 }
 
-func (client *KadpClient) FpeDecipher(req *FpeDecipherRequest) (string, error) {
+func (client *KadpClient) FpeDecipher(req *FpeDecipherRequest) (plaintext string, err error) {
 
 	if !client.authStatus {
 		return "", errors.New("KMS authentication failed")
@@ -271,12 +283,12 @@ func (client *KadpClient) FpeDecipher(req *FpeDecipherRequest) (string, error) {
 	if len(req.Ciphertext) < req.End {
 		return "", errors.New("结束位超出范围")
 	}
-	key, err := client.keyProcessor.retrieveOrFetchDekKey(req.Label, req.CipherKey)
+	// 从缓存中获取密钥
+	key, err := client.keyProcessor.retrieveOrFetchDekKey(req.Label)
 	if err != nil {
 		return "", fmt.Errorf("获取dek密钥失败: %w", err)
 	}
 
-	var plaintext string
 	switch req.Fpe {
 	case FF1:
 		plaintext, err = ff1Decrypt(req.Ciphertext, key, []byte(req.Tweak), len([]rune(req.Alphabet)), req.Start, req.End, req.Alphabet)
@@ -292,17 +304,15 @@ func (client *KadpClient) FpeDecipher(req *FpeDecipherRequest) (string, error) {
 	return plaintext, err
 }
 
-func (client *KadpClient) Encipher(req *EncipherRequest) (string, error) {
+func (client *KadpClient) Encipher(req *EncipherRequest) (ciphertext string, err error) {
 
 	if req.Plaintext == nil {
 		return "", errors.New("plaintext cannot be empty")
 	}
-	key, err := client.keyProcessor.retrieveOrFetchDekKey(req.Label, req.CipherKey)
+	key, err := client.keyProcessor.retrieveOrFetchDekKey(req.Label)
 	if err != nil {
 		return "", fmt.Errorf("获取dek密钥失败: %w", err)
 	}
-
-	var ciphertext string
 
 	switch req.Mode {
 	case CBC:
@@ -351,16 +361,14 @@ func (client *KadpClient) Encipher(req *EncipherRequest) (string, error) {
 	return ciphertext, err
 }
 
-func (client *KadpClient) Decipher(req *DecryptRequest) ([]byte, error) {
+func (client *KadpClient) Decipher(req *DecryptRequest) (plaintext []byte, err error) {
 	if req.Ciphertext == "" {
 		return nil, errors.New("ciphertext cannot be empty")
 	}
-	key, err := client.keyProcessor.retrieveOrFetchDekKey(req.Label, req.CipherKey)
+	key, err := client.keyProcessor.retrieveOrFetchDekKey(req.Label)
 	if err != nil {
 		return nil, fmt.Errorf("获取dek密钥失败: %w", err)
 	}
-
-	var plaintext []byte
 	switch req.Mode {
 	case CBC:
 		if req.Padding == NoPadding {
@@ -518,7 +526,7 @@ func (client *KadpClient) DigestEncrypt(plaintext string) string {
 }
 
 func (client *KadpClient) Hmac(req *HmacRequest) (string, error) {
-	key, err := client.keyProcessor.retrieveOrFetchDekKey(req.Label, req.CipherKey)
+	key, err := client.keyProcessor.retrieveOrFetchDekKey(req.Label)
 	if err != nil {
 		return "", fmt.Errorf("获取dek密钥失败: %w", err)
 	}
@@ -527,7 +535,7 @@ func (client *KadpClient) Hmac(req *HmacRequest) (string, error) {
 	return cipherText, nil
 }
 func (client *KadpClient) HmacVerify(req *HmacVerifyRequest) (bool, error) {
-	key, err := client.keyProcessor.retrieveOrFetchDekKey(req.Label, req.CipherKey)
+	key, err := client.keyProcessor.retrieveOrFetchDekKey(req.Label)
 	if err != nil {
 		return false, fmt.Errorf("获取dek密钥失败: %w", err)
 	}

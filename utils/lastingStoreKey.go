@@ -10,30 +10,35 @@ import (
 	"time"
 )
 
+var (
+	KeystorePassword string
+	KeystoreFileName string
+)
+
 func ReadKeyStore() keystore.KeyStore {
 
 	ks := keystore.New()
 
-	if _, err := os.Stat(configs.KeystoreFileName); os.IsNotExist(err) {
+	if _, err := os.Stat(KeystoreFileName); os.IsNotExist(err) {
 		// 文件不存在，则创建新的 KeyStore 并保存到文件
 		CreateKeyStore(ks)
 		logger.Debug("keystore判定不存在,开始创建keystore文件")
 	}
 
-	f, err := os.Open(configs.KeystoreFileName)
+	f, err := os.Open(KeystoreFileName)
 	if err != nil {
 		panic(err)
 	}
 	defer f.Close()
 
-	if err = ks.Load(f, []byte(configs.KeystorePassword)); err != nil {
+	if err = ks.Load(f, []byte(KeystorePassword)); err != nil {
 		panic(err)
 	}
 	return ks
 }
 
 func CreateKeyStore(ks keystore.KeyStore) {
-	f, err := os.Create(configs.KeystoreFileName)
+	f, err := os.Create(KeystoreFileName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,7 +49,7 @@ func CreateKeyStore(ks keystore.KeyStore) {
 		}
 	}()
 
-	err = ks.Store(f, []byte(configs.KeystorePassword))
+	err = ks.Store(f, []byte(KeystorePassword))
 	if err != nil {
 		panic(err)
 	}
@@ -88,7 +93,7 @@ func Zeroing(buf []byte) {
 }
 
 func StoreSecretKey(alias string, keyEntry keystore.PrivateKeyEntry, ks keystore.KeyStore) {
-	f, err := os.Create(configs.KeystoreFileName)
+	f, err := os.Create(KeystoreFileName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -103,7 +108,7 @@ func StoreSecretKey(alias string, keyEntry keystore.PrivateKeyEntry, ks keystore
 		fmt.Println(err)
 	}
 
-	err = ks.Store(f, []byte(configs.KeystorePassword))
+	err = ks.Store(f, []byte(KeystorePassword))
 
 	if err != nil {
 		log.Fatal(err) //nolint: gocritic
