@@ -313,6 +313,7 @@ func (client *KadpClient) Encipher(req *EncipherRequest) (ciphertext string, err
 	if err != nil {
 		return "", fmt.Errorf("获取dek密钥失败: %w", err)
 	}
+	logger.Debug("* Encipher", len(key))
 
 	switch req.Mode {
 	case CBC:

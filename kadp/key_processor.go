@@ -187,7 +187,7 @@ func (k *keyProcessor) decryptKmsKek(kek []byte) ([]byte, error) {
 
 	logger.Debug("===============end DEK encryption ...=================")
 
-	return dek, err
+	return decodeDek, err
 }
 
 func (k *keyProcessor) retrieveOrFetchDekKey(label string) ([]byte, error) {
@@ -206,6 +206,9 @@ func (k *keyProcessor) retrieveOrFetchDekKey(label string) ([]byte, error) {
 		}
 	}
 	decryptKey, err := k.decryptKmsKek(kek)
+	if err != nil {
+		return nil, fmt.Errorf("解密kek密钥失败: %w", err)
+	}
 	cache.KeyCache.Store(label, decryptKey)
 	logger.Debug("密文密钥解密成功", len(decryptKey))
 	return decryptKey, nil
