@@ -9,7 +9,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 	"io"
 	"sort"
 	"strings"
@@ -104,4 +106,21 @@ func GenerateRandomBytes(size int) ([]byte, error) {
 		return nil, err
 	}
 	return bytes, nil
+}
+
+// ParseResponse 通用响应解析函数，处理响应空值检查、类型转换和结构体映射
+func ParseResponse(result interface{}, target interface{}) error {
+	if result == nil {
+		return errors.New("响应数据为空")
+	}
+
+	resultMap, ok := result.(map[string]interface{})
+	if !ok {
+		return errors.New("响应数据格式错误，期望map[string]interface{}类型")
+	}
+
+	if err := mapstructure.Decode(resultMap, target); err != nil {
+		return fmt.Errorf("响应数据转换失败: %w", err)
+	}
+	return nil
 }

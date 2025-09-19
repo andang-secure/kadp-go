@@ -3,13 +3,11 @@ package kadp
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/andang-secure/kadp-go/configs"
 	"github.com/andang-secure/kadp-go/order"
 	"github.com/andang-secure/kadp-go/utils"
 	"github.com/andang-secure/kadp-go/utils/cache"
-	"github.com/mitchellh/mapstructure"
 	logger "github.com/sirupsen/logrus"
 	"strings"
 )
@@ -18,6 +16,14 @@ type keyProcessor struct {
 	privateKey string
 	domain     string
 	header     map[string]string
+}
+
+func newKeyProcessor(privateKey string, domain string, header map[string]string) *keyProcessor {
+	return &keyProcessor{
+		privateKey: privateKey,
+		domain:     domain,
+		header:     header,
+	}
 }
 
 func (k *keyProcessor) fetchAndCacheKek(label string, length int) ([]byte, error) {
@@ -33,21 +39,10 @@ func (k *keyProcessor) fetchAndCacheKek(label string, length int) ([]byte, error
 		return nil, fmt.Errorf("连接失败")
 	}
 
-	// 防止空指针
-	if result == nil {
-		return nil, errors.New("响应数据为空")
-	}
-
-	// 类型断言并转换响应结果
-	resultMap, ok := result.(map[string]interface{})
-	if !ok {
-		return nil, errors.New("响应数据格式错误")
-	}
-
-	// 将 map 转换为 kekRes 结构体（避免 Marshal/Unmarshal）
+	// 解析响应
 	var kekRes order.KmsRes
-	if err := mapstructure.Decode(resultMap, &kekRes); err != nil {
-		return nil, fmt.Errorf("响应数据转换失败: %w", err)
+	if err := utils.ParseResponse(result, &kekRes); err != nil {
+		return nil, fmt.Errorf("kek请求响应处理失败: %w", err)
 	}
 
 	// 检查业务状态码
@@ -151,21 +146,10 @@ func (k *keyProcessor) decryptKmsKek(kek []byte) ([]byte, error) {
 		return nil, fmt.Errorf("连接失败")
 	}
 
-	// 防止空指针
-	if result == nil {
-		return nil, errors.New("响应数据为空")
-	}
-
-	// 类型断言并转换响应结果
-	resultMap, ok := result.(map[string]interface{})
-	if !ok {
-		return nil, errors.New("响应数据格式错误")
-	}
-
-	// 将 map 转换为 kekRes 结构体（避免 Marshal/Unmarshal）
+	// 解析响应
 	var kekRes order.KmsRes
-	if err := mapstructure.Decode(resultMap, &kekRes); err != nil {
-		return nil, fmt.Errorf("响应数据转换失败: %w", err)
+	if err := utils.ParseResponse(result, &kekRes); err != nil {
+		return nil, fmt.Errorf("kek请求响应处理失败: %w", err)
 	}
 
 	// 检查业务状态码

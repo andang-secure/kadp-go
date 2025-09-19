@@ -9,7 +9,6 @@ import (
 	"github.com/andang-secure/kadp-go/utils"
 	"github.com/andang-secure/kadp-go/utils/aes_alg"
 	"github.com/andang-secure/kadp-go/utils/cache"
-	"github.com/mitchellh/mapstructure"
 	logger "github.com/sirupsen/logrus"
 	"runtime"
 )
@@ -39,6 +38,7 @@ type KadpClient struct {
 	version      string
 	authStatus   bool
 	keyProcessor *keyProcessor
+	KeyManager   *KeyManager
 }
 
 // NewKADPClient 初始化
@@ -82,27 +82,14 @@ func (client *KadpClient) registerAuth(addr, system, ip string) error {
 	if err != nil {
 		return fmt.Errorf("认证请求失败: %w", err)
 	}
-
-	// 防止空指针
-	if result == nil {
-		return errors.New("响应数据为空")
-	}
-
-	// 类型断言并转换响应结果
-	resultMap, ok := result.(map[string]interface{})
-	if !ok {
-		return errors.New("响应数据格式错误")
-	}
-
-	// 将 map 转换为 KmsRes 结构体（避免 Marshal/Unmarshal）
+	// 解析响应
 	var registerRes order.KmsRes
-	if err := mapstructure.Decode(resultMap, &registerRes); err != nil {
-		return fmt.Errorf("响应数据转换失败: %w", err)
+	if err := utils.ParseResponse(result, &registerRes); err != nil {
+		return fmt.Errorf("注册认证响应处理失败: %w", err)
 	}
-
 	// 检查业务状态码
 	if registerRes.Code != 0 {
-		return fmt.Errorf("ksm server err: %s", registerRes.Msg) // 修正错误包装方式
+		return fmt.Errorf("KMS服务器返回错误: %s (code: %d)", registerRes.Msg, registerRes.Code)
 	}
 
 	return nil
@@ -157,41 +144,29 @@ func (client *KadpClient) init() (bool, error) {
 	logger.Debug("===============start AUTH authentication ...=================")
 	logger.Debug(authReq)
 	result, err := utils.SendRequest(configs.POST, client.config.Domain+configs.AUTH_URL, client.header, authReq)
-
 	if err != nil {
 		logger.Error("Failed to send request:", err)
 		return false, fmt.Errorf("连接失败")
 	}
 
-	// 防止空指针
-	if result == nil {
-		return false, errors.New("响应数据为空")
-	}
-
-	// 类型断言并转换响应结果
-	resultMap, ok := result.(map[string]interface{})
-	if !ok {
-		return false, errors.New("响应数据格式错误")
-	}
-
-	// 将 map 转换为 KmsRes 结构体（避免 Marshal/Unmarshal）
+	// 解析认证响应
 	var authRes order.KmsAuthRes
-	if err := mapstructure.Decode(resultMap, &authRes); err != nil {
-		return false, fmt.Errorf("响应数据转换失败: %w", err)
+	if err := utils.ParseResponse(result, &authRes); err != nil {
+		return false, fmt.Errorf("身份认证响应处理失败: %w", err)
 	}
 
-	// 检查业务状态码
+	// 检查认证结果
 	if authRes.Code != 0 {
-		return false, fmt.Errorf("ksm server err: %s", authRes.Msg) // 修正错误包装方式
+		return false, fmt.Errorf("KMS服务器返回认证错误: %s (code: %d)", authRes.Msg, authRes.Code)
 	}
 
-	client.keyProcessor = &keyProcessor{
-		privateKey: privateKey,
-		domain:     client.config.Domain,
-		header: map[string]string{
-			configs.TOKEN: authRes.Data.Token,
-		},
+	HeaderMap := map[string]string{
+		configs.TOKEN: authRes.Data.Token,
 	}
+
+	client.keyProcessor = newKeyProcessor(privateKey, client.config.Domain, HeaderMap)
+	client.KeyManager = newKeyManager(client.config.Domain, HeaderMap)
+
 	logger.Debug("* AUTH /Client authentication result: true")
 	logger.Debug("===============end AUTH authentication ...=================")
 	logger.Debug("")

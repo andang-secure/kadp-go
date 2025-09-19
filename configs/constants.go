@@ -10,9 +10,10 @@ const (
 )
 
 const (
-	TOKEN = "token"
-	POST  = "POST"
-	GET   = "GET"
+	TOKEN  = "token"
+	POST   = "POST"
+	GET    = "GET"
+	DELETE = "DELETE"
 )
 
 const (
@@ -20,4 +21,19 @@ const (
 	REGISTE_URL = "/v1/ksp/open_api/kadp/register"
 	KEK_URL     = "/v1/ksp/open_api/dek_text"
 	DEK_URL     = "/v1/ksp/open_api/dek"
+)
+
+// 密钥管理部分
+const (
+	KEY_LIST_URL = "/v1/ksp/open_api/key/list"
+)
+
+// State 密钥状态枚举
+type State int
+
+const (
+	StateActive State = iota
+	StateInactive
+	StateDestroyed
+	StateCompromised
 )

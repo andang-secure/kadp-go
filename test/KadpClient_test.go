@@ -15,8 +15,8 @@ func TestKadp(t *testing.T) {
 	//myClient, err := kadp.NewKADPClient(url, token, "QVSxoBH+SsUH9Vl3UC3D7YGV4tw5vaI7T/joivh/7FECvH06rcTwJvHjxvzdy8cD", "keystore.jks", "123456")
 
 	logger.SetLevel(logger.DebugLevel)
-	url := "http://192.168.0.194:8190"
-	RegisterToken := "IAx//zMaqjGzirfrS+09YnHqVrf/nZVQ5K+s3rnXqGhjDZ2wiTZZDJ13YgCtWDSC"
+	url := "http://192.168.0.129:8191"
+	RegisterToken := "hnludUczLOwZfj0t84j1Eh0btPVNviLgPSjOfuS8oKaNNLACoKUd56YNb31jzU+d"
 	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEMQiHkMEfcYVm5LCUFDACn/4uYJNqpgHbrttZD1lDkyDuKsYM0MixYY2ZkImWaSB72eZX0pGbMKoOk5e4nAvIRcHEcQc8Lk/BmHMBRmK10wsziUiedJJB5rDzTEy2cC1/+v5f2gsHfXNjEY0aJmvegzuD2PKC72TTofMnvzJz2abUUafgTjCRnGe3x4iTN5ZKUtx/89hfUahPcUD5H9hreRPVpFvEk/XV3yV3B3OhI2N1Lpops2R20qfdl/2VfKbhIklvHWEL1UoWmGUII6G4jOTr0FZoKOXwnlvasbTdkiFGgGI+EUgbgYh4+r8Z875ADNEF+Uwae1UWKHs7Brrf9pB/bvkrWJIr4q1bduMYMLb3sYjkjchlyfwd+5WIESIcAmQaB1V5ChLDSMOXudqAh9jnuibzNGkBjAcwMRTB+K0b5mTkwyXIJTUSIIHvco8IZLVoPWGrDX/nEamGuzqbGE="
 	myClient, err := kadp.NewKADPClient(&configs.KmsConfig{
 		Domain:           url,
@@ -27,16 +27,18 @@ func TestKadp(t *testing.T) {
 	})
 	if err != nil {
 		t.Error(err)
+		return
 	}
 
 	//url := "https://192.168.0.135:8390"
 	//token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEP/z+clh1zM1fMnHmIVmepiB8y6IQC2GTmUVA7bfhfsbreTWy59jhDOQ+EnFLSau0R4NOLZv7ZopZZ88B5KuIde6HR7h4NvY4Rm8xrSVb17K/YfoYS59P4LOBzMjB4aSk74Z7C5Kk1nCosQBN7LH6eBewZKUAquBi4iXtw3MNpR+SCOoJKzZiWFWPyffmsb9MLpEWC7+VqzFdiPMsvA781aO1LbuU4UA/VpOzwoXIVuw8UskLbjhLNOG0ot6mHUKjiohmxGtYAmnac/ylx8/Fus6n69HzGCxdpm/406VnPz1eiCQvW5Zc8CNrcBeZQCdutCFCxNyNmPBm4e0t8pcqqjxeDacaWMCLnp8cvPKalQppcpVCVOGqHjhLTKbRoCOzPbR9X3I7GBii3gEbQg3Fqb6pTSLSyG9+8vlauD11amb"
 	//myClient, err := kadp.NewKADPClient(url, token, "Fps7T/jRIevtJih8GVcp02HmTWRIis//Fqd8LbbiOaPYI0tcSI1mCeh7ecInQC77", "keystore.jks", "123456")
 
-	label := "s3"
+	label := "kadp10"
 	key, err := myClient.CreateCipherKey(32, label)
 	if err != nil {
 		t.Error(err)
+		return
 	}
 
 	//FPE
@@ -57,6 +59,7 @@ func TestKadp(t *testing.T) {
 	})
 	if err != nil {
 		t.Error(err)
+		return
 	}
 	fmt.Println("FPE密文：" + encrypt)
 
@@ -72,6 +75,7 @@ func TestKadp(t *testing.T) {
 	})
 	if err != nil {
 		t.Error(err)
+		return
 	}
 	fmt.Println("FPE明文：" + decipher)
 
@@ -89,6 +93,7 @@ func TestKadp(t *testing.T) {
 	})
 	if err != nil {
 		t.Error(err)
+		return
 	}
 	fmt.Println("AES密文" + encipher)
 
@@ -104,6 +109,7 @@ func TestKadp(t *testing.T) {
 
 	if err != nil {
 		t.Error(err)
+		return
 	}
 	fmt.Println("解密", string(plaintext))
 
@@ -123,6 +129,7 @@ func TestKadp(t *testing.T) {
 
 	if err != nil {
 		t.Error(err)
+		return
 	}
 	fmt.Println("非对称加密密文：", publicEncrypt)
 
@@ -133,6 +140,7 @@ func TestKadp(t *testing.T) {
 	})
 	if err != nil {
 		t.Error(err)
+		return
 	}
 	fmt.Println("私钥解密：", decrypt)
 
@@ -145,6 +153,7 @@ func TestKadp(t *testing.T) {
 	})
 	if err != nil {
 		t.Error(err)
+		return
 	}
 	fmt.Println("签名:", r, s)
 
@@ -157,6 +166,7 @@ func TestKadp(t *testing.T) {
 	})
 	if err != nil {
 		t.Error(err)
+		return
 	}
 	fmt.Println("验签:", verify)
 
@@ -171,6 +181,7 @@ func TestKadp(t *testing.T) {
 	})
 	if err != nil {
 		t.Error(err)
+		return
 	}
 	fmt.Println("Hmac值：", hash)
 
@@ -182,18 +193,85 @@ func TestKadp(t *testing.T) {
 	})
 	if err != nil {
 		t.Error(err)
+		return
 	}
 	fmt.Println("验证Hmac成功：", hmacVerify)
 
 	SHA1Val, err := myClient.SHASum([]byte(data), kadp.Sha1)
 	if err != nil {
 		t.Error(err)
+		return
 	}
 	fmt.Println("SHA1计算：", SHA1Val)
 
 	SHA256Val, err := myClient.SHASum([]byte(data), kadp.Sha256)
 	if err != nil {
 		t.Error(err)
+		return
 	}
 	fmt.Println("SHA256计算：", SHA256Val)
+
+	list, err := myClient.KeyManager.SecretKeyList(&kadp.KeyListParam{
+		Page:     "1",
+		PageSize: "10",
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Println("密钥列表：", list)
+
+	id, err := myClient.KeyManager.CreateKey(&kadp.CreateKeyRequest{
+		Name:      "kadp10",
+		Algorithm: 1,
+		Size:      128,
+		KeyUsage:  "3",
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Println("密钥创建：", id)
+
+	keyInfo, err := myClient.KeyManager.GetKeyInfo(id)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Println("密钥信息：", keyInfo)
+
+	//err = myClient.KeyManager.DeleteKey(id)
+	//if err != nil {
+	//	t.Error(err)
+	//}
+	//fmt.Println("密钥删除：")
+
+	err = myClient.KeyManager.UpdateKey(&kadp.UpdateKeyRequest{
+		Kid:        id,
+		Deletable:  0,
+		Exportable: 0,
+		KeyUsage:   "1",
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Println("密钥修改：")
+
+	err = myClient.KeyManager.AddKeyVersion(id)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Println("版本添加：")
+
+	err = myClient.KeyManager.CloneKey(&kadp.CloneKeyRequest{
+		Kid:  id,
+		Name: "das",
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Println("密钥克隆：")
 }

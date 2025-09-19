@@ -111,3 +111,45 @@ type HmacVerifyRequest struct {
 	Label     string
 	HmacVal   string
 }
+
+//KeyManager
+
+// KeyListParam 密钥列表查询参数
+type KeyListParam struct {
+	Page     string `json:"page"`
+	PageSize string `json:"page_size"`
+}
+
+type CreateKeyRequest struct {
+	Name      string `json:"name"`
+	Algorithm int    `json:"algorithm"`
+	Size      int    `json:"size"`
+	KeyUsage  string `json:"key_usage"`
+}
+
+type deleteKeyRequest struct {
+	Kid string `json:"kid"`
+}
+
+type UpdateKeyRequest struct {
+	Kid        string `json:"kid"`
+	Deletable  int    `json:"deletable"`
+	Exportable int    `json:"exportable"`
+	KeyUsage   string `json:"key_usage"`
+}
+
+type commonKidRequest struct {
+	Kid string `json:"kid"`
+}
+
+type CloneKeyRequest struct {
+	Kid  string `json:"kid"`
+	Name string `json:"name"`
+}
+
+type DistributeKeyRequest struct {
+	PublicKey string `json:"public_key"`
+	Algorithm int    `json:"algorithm"`
+	KeyName   string `json:"key_name"`
+	Kid       string `json:"Kid"`
+}
