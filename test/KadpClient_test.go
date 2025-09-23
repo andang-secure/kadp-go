@@ -15,7 +15,7 @@ func TestKadp(t *testing.T) {
 	//myClient, err := kadp.NewKADPClient(url, token, "QVSxoBH+SsUH9Vl3UC3D7YGV4tw5vaI7T/joivh/7FECvH06rcTwJvHjxvzdy8cD", "keystore.jks", "123456")
 
 	logger.SetLevel(logger.DebugLevel)
-	url := "http://192.168.0.129:8191"
+	url := "http://192.168.0.129:8190"
 	RegisterToken := "hnludUczLOwZfj0t84j1Eh0btPVNviLgPSjOfuS8oKaNNLACoKUd56YNb31jzU+d"
 	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEMQiHkMEfcYVm5LCUFDACn/4uYJNqpgHbrttZD1lDkyDuKsYM0MixYY2ZkImWaSB72eZX0pGbMKoOk5e4nAvIRcHEcQc8Lk/BmHMBRmK10wsziUiedJJB5rDzTEy2cC1/+v5f2gsHfXNjEY0aJmvegzuD2PKC72TTofMnvzJz2abUUafgTjCRnGe3x4iTN5ZKUtx/89hfUahPcUD5H9hreRPVpFvEk/XV3yV3B3OhI2N1Lpops2R20qfdl/2VfKbhIklvHWEL1UoWmGUII6G4jOTr0FZoKOXwnlvasbTdkiFGgGI+EUgbgYh4+r8Z875ADNEF+Uwae1UWKHs7Brrf9pB/bvkrWJIr4q1bduMYMLb3sYjkjchlyfwd+5WIESIcAmQaB1V5ChLDSMOXudqAh9jnuibzNGkBjAcwMRTB+K0b5mTkwyXIJTUSIIHvco8IZLVoPWGrDX/nEamGuzqbGE="
 	myClient, err := kadp.NewKADPClient(&configs.KmsConfig{
@@ -34,8 +34,8 @@ func TestKadp(t *testing.T) {
 	//token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEP/z+clh1zM1fMnHmIVmepiB8y6IQC2GTmUVA7bfhfsbreTWy59jhDOQ+EnFLSau0R4NOLZv7ZopZZ88B5KuIde6HR7h4NvY4Rm8xrSVb17K/YfoYS59P4LOBzMjB4aSk74Z7C5Kk1nCosQBN7LH6eBewZKUAquBi4iXtw3MNpR+SCOoJKzZiWFWPyffmsb9MLpEWC7+VqzFdiPMsvA781aO1LbuU4UA/VpOzwoXIVuw8UskLbjhLNOG0ot6mHUKjiohmxGtYAmnac/ylx8/Fus6n69HzGCxdpm/406VnPz1eiCQvW5Zc8CNrcBeZQCdutCFCxNyNmPBm4e0t8pcqqjxeDacaWMCLnp8cvPKalQppcpVCVOGqHjhLTKbRoCOzPbR9X3I7GBii3gEbQg3Fqb6pTSLSyG9+8vlauD11amb"
 	//myClient, err := kadp.NewKADPClient(url, token, "Fps7T/jRIevtJih8GVcp02HmTWRIis//Fqd8LbbiOaPYI0tcSI1mCeh7ecInQC77", "keystore.jks", "123456")
 
-	label := "kadp10"
-	key, err := myClient.CreateCipherKey(32, label)
+	label := "kadpx2"
+	key, err := myClient.CreateCipherKey(32, label, 1)
 	if err != nil {
 		t.Error(err)
 		return
@@ -222,7 +222,7 @@ func TestKadp(t *testing.T) {
 	fmt.Println("密钥列表：", list)
 
 	id, err := myClient.KeyManager.CreateKey(&kadp.CreateKeyRequest{
-		Name:      "kadp10",
+		Name:      "kadp-test-11",
 		Algorithm: 1,
 		Size:      128,
 		KeyUsage:  "3",
@@ -240,15 +240,9 @@ func TestKadp(t *testing.T) {
 	}
 	fmt.Println("密钥信息：", keyInfo)
 
-	//err = myClient.KeyManager.DeleteKey(id)
-	//if err != nil {
-	//	t.Error(err)
-	//}
-	//fmt.Println("密钥删除：")
-
 	err = myClient.KeyManager.UpdateKey(&kadp.UpdateKeyRequest{
-		Kid:        id,
-		Deletable:  0,
+		Id:         id,
+		Deletable:  1,
 		Exportable: 0,
 		KeyUsage:   "1",
 	})
@@ -258,6 +252,13 @@ func TestKadp(t *testing.T) {
 	}
 	fmt.Println("密钥修改：")
 
+	err = myClient.KeyManager.DeleteKey(id)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Println("密钥删除：")
+
 	err = myClient.KeyManager.AddKeyVersion(id)
 	if err != nil {
 		t.Error(err)
@@ -266,7 +267,7 @@ func TestKadp(t *testing.T) {
 	fmt.Println("版本添加：")
 
 	err = myClient.KeyManager.CloneKey(&kadp.CloneKeyRequest{
-		Kid:  id,
+		Id:   id,
 		Name: "das",
 	})
 	if err != nil {

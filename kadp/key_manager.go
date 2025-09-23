@@ -48,31 +48,31 @@ func (km *KeyManager) SecretKeyList(keyListParam *KeyListParam) (*KeyList, error
 	return &keyListResp.Data, nil
 }
 
-func (km *KeyManager) CreateKey(req *CreateKeyRequest) (kid string, err error) {
+func (km *KeyManager) CreateKey(req *CreateKeyRequest) (id int64, err error) {
 	logger.Debug("开始创建密钥")
 	if req.Name == "" {
-		return "", fmt.Errorf("请输入密钥名称")
+		return 0, fmt.Errorf("请输入密钥名称")
 	}
 	createKeyResp := createKeyRes{}
 
 	err = utils.SendRequest2(configs.POST, km.domain+"/v1/ksp/open_api/key/create", km.header, req, false, &createKeyResp)
 	if err != nil {
-		return "", fmt.Errorf("创建密钥失败: %w", err)
+		return 0, fmt.Errorf("创建密钥失败: %w", err)
 	}
 	if createKeyResp.Code != 0 {
-		return "", fmt.Errorf("ksm server err: %s", createKeyResp.Msg) // 修正错误包装方式
+		return 0, fmt.Errorf("ksm server err: %s", createKeyResp.Msg) // 修正错误包装方式
 	}
-	return createKeyResp.Data.Kid, nil
+	return createKeyResp.Data.Id, nil
 }
 
-func (km *KeyManager) GetKeyInfo(kid string) (*KeyInfoData, error) {
+func (km *KeyManager) GetKeyInfo(id int64) (*KeyInfoData, error) {
 	logger.Debug("开始获取密钥信息")
-	if kid == "" {
+	if id == 0 {
 		return nil, fmt.Errorf("请输入密钥ID")
 	}
 	KeyInfoRes := keyInfoRes{}
 	err := utils.GetRequest(configs.GET, km.domain+"/v1/ksp/open_api/key/info", km.header, map[string]interface{}{
-		"kid": kid, // 页码
+		"id": id,
 	}, false, &KeyInfoRes)
 
 	if err != nil {
@@ -85,15 +85,15 @@ func (km *KeyManager) GetKeyInfo(kid string) (*KeyInfoData, error) {
 	return &KeyInfoRes.Data, nil
 }
 
-func (km *KeyManager) DeleteKey(kid string) error {
+func (km *KeyManager) DeleteKey(id int64) error {
 	logger.Debug("开始删除密钥")
-	if kid == "" {
+	if id == 0 {
 		return fmt.Errorf("请输入密钥ID")
 	}
 	deleteKeyResp := commonRes{}
 
 	err := utils.SendRequest2(configs.DELETE, km.domain+"/v1/ksp/open_api/key/delete",
-		km.header, &deleteKeyRequest{Kid: kid}, false, &deleteKeyResp)
+		km.header, &deleteKeyRequest{Id: id}, false, &deleteKeyResp)
 	if err != nil {
 		return fmt.Errorf("创建密钥失败: %w", err)
 	}
@@ -105,7 +105,7 @@ func (km *KeyManager) DeleteKey(kid string) error {
 
 func (km *KeyManager) UpdateKey(req *UpdateKeyRequest) error {
 	logger.Debug("开始修改密钥")
-	if req.Kid == "" {
+	if req.Id == 0 {
 		return fmt.Errorf("请输入密钥ID")
 	}
 	updateKeyResp := commonRes{}
@@ -121,15 +121,15 @@ func (km *KeyManager) UpdateKey(req *UpdateKeyRequest) error {
 	return nil
 }
 
-func (km *KeyManager) AddKeyVersion(kid string) error {
+func (km *KeyManager) AddKeyVersion(id int64) error {
 	logger.Debug("开始密钥版本添加")
-	if kid == "" {
+	if id == 0 {
 		return fmt.Errorf("请输入密钥ID")
 	}
 	addKeyVersionResp := commonRes{}
 
 	err := utils.SendRequest2(configs.POST, km.domain+"/v1/ksp/open_api/key/addversion", km.header,
-		&commonKidRequest{Kid: kid}, false, &addKeyVersionResp)
+		&commonKidRequest{Id: id}, false, &addKeyVersionResp)
 	if err != nil {
 		return fmt.Errorf("创建密钥失败: %w", err)
 	}
@@ -141,7 +141,7 @@ func (km *KeyManager) AddKeyVersion(kid string) error {
 
 func (km *KeyManager) CloneKey(req *CloneKeyRequest) error {
 	logger.Debug("开始密钥克隆")
-	if req.Kid == "" {
+	if req.Id == 0 {
 		return fmt.Errorf("请输入需要克隆的密钥ID")
 	}
 	if req.Name == "" {
@@ -160,17 +160,17 @@ func (km *KeyManager) CloneKey(req *CloneKeyRequest) error {
 	return nil
 }
 
-func (km *KeyManager) DistributeKey(req *CloneKeyRequest) error {
+func (km *KeyManager) DistributeKey(req *DistributeKeyRequest) error {
 	logger.Debug("开始密钥版本添加")
-	if req.Kid == "" {
+	if req.Id == 0 {
 		return fmt.Errorf("请输入需要克隆的密钥ID")
 	}
-	if req.Name == "" {
+	if req.KeyName == "" {
 		return fmt.Errorf("请输入新的密钥名称")
 	}
 	cloneKeyResp := commonRes{}
 
-	err := utils.SendRequest2(configs.POST, km.domain+"/v1/ksp/open_api/key/clone", km.header,
+	err := utils.SendRequest2(configs.POST, km.domain+"/v1/ksp/open_api/key/distribute", km.header,
 		req, false, &cloneKeyResp)
 	if err != nil {
 		return fmt.Errorf("创建密钥失败: %w", err)
@@ -179,4 +179,32 @@ func (km *KeyManager) DistributeKey(req *CloneKeyRequest) error {
 		return fmt.Errorf("ksm server err: %s", cloneKeyResp.Msg) // 修正错误包装方式
 	}
 	return nil
+}
+
+func (km *KeyManager) ExportKey(req *ExportKeyRequest) (*ExportKeyData, error) {
+	logger.Debug("开始密钥版本添加")
+	if req.WrappingAlgorithm == "" {
+		return nil, fmt.Errorf("请输入密钥包装算法")
+	}
+	if req.PublicKeyBlob == "" {
+		return nil, fmt.Errorf("请输入公钥blob")
+	}
+	if req.WrappingKeySpec == "" {
+		return nil, fmt.Errorf("请输入密钥包装密钥")
+	}
+	if req.CiphertextBlob == "" {
+		return nil, fmt.Errorf("请输入密文blob")
+	}
+	exportKeyResp := ExportKeyRes{}
+
+	err := utils.SendRequest2(configs.POST, km.domain+"/v1/ksp/open_api/key/export", km.header,
+		req, false, &exportKeyResp)
+	if err != nil {
+		return nil, fmt.Errorf("创建密钥失败: %w", err)
+	}
+	if exportKeyResp.Code != 0 {
+		return nil, fmt.Errorf("ksm server err: %s", exportKeyResp.Msg) // 修正错误包装方式
+	}
+
+	return &exportKeyResp.Data, nil
 }

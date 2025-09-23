@@ -26,11 +26,12 @@ func newKeyProcessor(privateKey string, domain string, header map[string]string)
 	}
 }
 
-func (k *keyProcessor) fetchAndCacheKek(label string, length int) ([]byte, error) {
+func (k *keyProcessor) fetchAndCacheKek(label string, length int, isStore int) ([]byte, error) {
 
 	result, err := utils.SendRequest(configs.POST, k.domain+configs.KEK_URL, k.header, order.KekReq{
-		Label:  label,
-		Length: length,
+		Label:   label,
+		Length:  length,
+		IsStore: isStore,
 	})
 
 	logger.Debug("===============start KEK encryption ...=================")
@@ -184,10 +185,11 @@ func (k *keyProcessor) retrieveOrFetchDekKey(label string) ([]byte, error) {
 	kek, err := utils.NewKeyStoreObj().RetrieveSecretKey(label)
 	if err != nil {
 		logger.Debug("密钥不存在", err.Error())
-		kek, err = k.fetchAndCacheKek(label, 16)
-		if err != nil {
-			return nil, err
-		}
+		//kek, err = k.fetchAndCacheKek(label, 16,)
+		//if err != nil {
+		//	return nil, err
+		//}
+		//return nil, err
 	}
 	decryptKey, err := k.decryptKmsKek(kek)
 	if err != nil {

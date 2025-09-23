@@ -128,22 +128,22 @@ type CreateKeyRequest struct {
 }
 
 type deleteKeyRequest struct {
-	Kid string `json:"kid"`
+	Id int64 `json:"id"`
 }
 
 type UpdateKeyRequest struct {
-	Kid        string `json:"kid"`
+	Id         int64  `json:"id"`
 	Deletable  int    `json:"deletable"`
 	Exportable int    `json:"exportable"`
 	KeyUsage   string `json:"key_usage"`
 }
 
 type commonKidRequest struct {
-	Kid string `json:"kid"`
+	Id int64 `json:"id"`
 }
 
 type CloneKeyRequest struct {
-	Kid  string `json:"kid"`
+	Id   int64  `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -151,5 +151,12 @@ type DistributeKeyRequest struct {
 	PublicKey string `json:"public_key"`
 	Algorithm int    `json:"algorithm"`
 	KeyName   string `json:"key_name"`
-	Kid       string `json:"Kid"`
+	Id        int64  `json:"id"`
+}
+
+type ExportKeyRequest struct {
+	CiphertextBlob    string `json:"ciphertext_blob"`    //使用主密钥加密的数据密钥
+	PublicKeyBlob     string `json:"public_key_blob"`    //base64格式的公钥
+	WrappingAlgorithm string `json:"wrapping_algorithm"` //公钥加密的类型
+	WrappingKeySpec   string `json:"wrapping_key_spec"`  //公钥类型
 }

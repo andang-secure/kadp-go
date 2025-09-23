@@ -173,7 +173,7 @@ func (client *KadpClient) init() (bool, error) {
 	return true, nil
 
 }
-func (client *KadpClient) CreateCipherKey(length int, label string) ([]byte, error) {
+func (client *KadpClient) CreateCipherKey(length int, label string, isStore int) ([]byte, error) {
 	if !client.authStatus {
 		return nil, errors.New("KMS authentication failed")
 	}
@@ -192,7 +192,7 @@ func (client *KadpClient) CreateCipherKey(length int, label string) ([]byte, err
 	if err != nil && kek == nil {
 		logger.Debug("* CreateCipherKey", len(kek))
 
-		kek, err = client.keyProcessor.fetchAndCacheKek(label, length)
+		kek, err = client.keyProcessor.fetchAndCacheKek(label, length, isStore)
 		if err != nil {
 			return nil, fmt.Errorf("获取kek密钥失败: %w", err)
 		}
@@ -200,16 +200,6 @@ func (client *KadpClient) CreateCipherKey(length int, label string) ([]byte, err
 	deyKey, err := client.keyProcessor.decryptKmsKek(kek)
 	cache.KeyCache.Store(label, deyKey)
 	logger.Debug("* CreateCipherKey", len(deyKey))
-	//randomBytes, err := utils.GenerateRandomBytes(length)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//enyKey, err := client.keyProcessor.encryptDek(randomBytes, kek)
-	//if err != nil {
-	//	return nil, fmt.Errorf("加密dek密钥失败: %w", err)
-	//}
-
 	logger.Debug("* 创建密文密钥", len(deyKey))
 	return deyKey, nil
 }

@@ -15,6 +15,7 @@ type KeyList struct {
 }
 
 type KeyData struct {
+	Id                       int64       `json:"id"`
 	Kid                      string      `json:"kid"`
 	Name                     string      `json:"name"`
 	Label                    string      `json:"label"`
@@ -62,7 +63,7 @@ type createKeyRes struct {
 	Msg       string `json:"msg"`
 	RequestID string `json:"request_id"`
 	Data      struct {
-		Kid string `json:"kid"`
+		Id int64 `json:"id"`
 	} `json:"data"`
 }
 
@@ -74,6 +75,7 @@ type keyInfoRes struct {
 }
 
 type KeyInfoData struct {
+	Id                       int64       `json:"id"`
 	Kid                      string      `json:"kid"`
 	Name                     string      `json:"name"`
 	Label                    string      `json:"label"`
@@ -121,4 +123,15 @@ type commonRes struct {
 	Msg       string      `json:"msg"`
 	RequestID string      `json:"request_id"`
 	Data      interface{} `json:"data"`
+}
+
+type ExportKeyRes struct {
+	Code      int           `json:"code"`
+	Msg       string        `json:"msg"`
+	RequestID string        `json:"request_id"`
+	Data      ExportKeyData `json:"data"`
+}
+
+type ExportKeyData struct {
+	KeyPlain string `json:"key_plain"`
 }

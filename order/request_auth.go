@@ -23,6 +23,7 @@ type TempKeyData struct {
 }
 
 type KekReq struct {
-	Label  string `json:"label"`
-	Length int    `json:"length"`
+	Label   string `json:"label"`
+	Length  int    `json:"length"`
+	IsStore int    `json:"is_store"` //0默认不存储，1存储DB
 }
