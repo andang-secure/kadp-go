@@ -34,13 +34,14 @@ func TestKadp(t *testing.T) {
 	//token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEP/z+clh1zM1fMnHmIVmepiB8y6IQC2GTmUVA7bfhfsbreTWy59jhDOQ+EnFLSau0R4NOLZv7ZopZZ88B5KuIde6HR7h4NvY4Rm8xrSVb17K/YfoYS59P4LOBzMjB4aSk74Z7C5Kk1nCosQBN7LH6eBewZKUAquBi4iXtw3MNpR+SCOoJKzZiWFWPyffmsb9MLpEWC7+VqzFdiPMsvA781aO1LbuU4UA/VpOzwoXIVuw8UskLbjhLNOG0ot6mHUKjiohmxGtYAmnac/ylx8/Fus6n69HzGCxdpm/406VnPz1eiCQvW5Zc8CNrcBeZQCdutCFCxNyNmPBm4e0t8pcqqjxeDacaWMCLnp8cvPKalQppcpVCVOGqHjhLTKbRoCOzPbR9X3I7GBii3gEbQg3Fqb6pTSLSyG9+8vlauD11amb"
 	//myClient, err := kadp.NewKADPClient(url, token, "Fps7T/jRIevtJih8GVcp02HmTWRIis//Fqd8LbbiOaPYI0tcSI1mCeh7ecInQC77", "keystore.jks", "123456")
 
-	label := "kadpx2"
-	key, err := myClient.CreateCipherKey(32, label, 1)
+	label := "kadpx2w34"
+	_, err = myClient.CreateCipherKey(16, label, 1)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
+	fmt.Println("密钥创建成功")
 	//FPE
 	str := "15191812322"
 	tweak := "1234567"
@@ -49,7 +50,6 @@ func TestKadp(t *testing.T) {
 	end := 8
 	encrypt, err := myClient.FpeEncipher(&kadp.FpeEncipherRequest{
 		Plaintext: str,
-		CipherKey: key,
 		Fpe:       kadp.FF1,
 		Tweak:     tweak,
 		Alphabet:  alphabet,
@@ -65,7 +65,6 @@ func TestKadp(t *testing.T) {
 
 	decipher, err := myClient.FpeDecipher(&kadp.FpeDecipherRequest{
 		Ciphertext: encrypt,
-		CipherKey:  key,
 		Fpe:        kadp.FF1,
 		Tweak:      tweak,
 		Alphabet:   alphabet,
@@ -84,8 +83,8 @@ func TestKadp(t *testing.T) {
 	iv := "1234567891234567"
 	encipher, err := myClient.Encipher(&kadp.EncipherRequest{
 		Plaintext: []byte(data),
-		CipherKey: key,
-		Algorithm: kadp.AES,
+		//CipherKey: key,
+		Algorithm: kadp.SM4,
 		Mode:      kadp.ECB,
 		Padding:   kadp.NoPadding,
 		Label:     label,
@@ -99,12 +98,12 @@ func TestKadp(t *testing.T) {
 
 	plaintext, err := myClient.Decipher(&kadp.DecryptRequest{
 		Ciphertext: encipher,
-		CipherKey:  key,
-		Algorithm:  kadp.AES,
-		Mode:       kadp.ECB,
-		Padding:    kadp.NoPadding,
-		Label:      label,
-		IV:         iv,
+		//CipherKey:  key,
+		Algorithm: kadp.SM4,
+		Mode:      kadp.ECB,
+		Padding:   kadp.NoPadding,
+		Label:     label,
+		IV:        iv,
 	})
 
 	if err != nil {
@@ -175,9 +174,8 @@ func TestKadp(t *testing.T) {
 	fmt.Println("摘要哈希：", Hash)
 
 	hash, err := myClient.Hmac(&kadp.HmacRequest{
-		CipherKey: key,
-		Message:   []byte(data),
-		Label:     label,
+		Message: []byte(data),
+		Label:   label,
 	})
 	if err != nil {
 		t.Error(err)
@@ -186,10 +184,9 @@ func TestKadp(t *testing.T) {
 	fmt.Println("Hmac值：", hash)
 
 	hmacVerify, err := myClient.HmacVerify(&kadp.HmacVerifyRequest{
-		CipherKey: key,
-		Message:   []byte(data),
-		Label:     label,
-		HmacVal:   hash,
+		Message: []byte(data),
+		Label:   label,
+		HmacVal: hash,
 	})
 	if err != nil {
 		t.Error(err)
@@ -222,7 +219,7 @@ func TestKadp(t *testing.T) {
 	fmt.Println("密钥列表：", list)
 
 	id, err := myClient.KeyManager.CreateKey(&kadp.CreateKeyRequest{
-		Name:      "kadp-test-112",
+		Name:      "kadp-test-1123",
 		Algorithm: 2,
 		Size:      1024,
 		KeyUsage:  "3",
@@ -258,21 +255,30 @@ func TestKadp(t *testing.T) {
 		return
 	}
 	fmt.Println("密钥删除：")
+	//
+	//err = myClient.KeyManager.AddKeyVersion(id)
+	//if err != nil {
+	//	t.Error(err)
+	//	return
+	//}
+	//fmt.Println("版本添加：")
 
-	err = myClient.KeyManager.AddKeyVersion(id)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	fmt.Println("版本添加：")
-
-	err = myClient.KeyManager.CloneKey(&kadp.CloneKeyRequest{
-		Id:   id,
-		Name: "das",
+	//err = myClient.KeyManager.CloneKey(&kadp.CloneKeyRequest{
+	//	Id:   id,
+	//	Name: "das",
+	//})
+	//if err != nil {
+	//	t.Error(err)
+	//	return
+	//}
+	fmt.Println("密钥克隆：")
+	keyExportData, err := myClient.KeyManager.ExportKey(&kadp.ExportKeyRequest{
+		KeyName:    "kadp-test-1123-pub",
+		KeyVersion: 0,
 	})
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	fmt.Println("密钥克隆：")
+	fmt.Println("密钥导出：", keyExportData)
 }

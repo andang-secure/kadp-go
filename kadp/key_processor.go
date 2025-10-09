@@ -164,15 +164,16 @@ func (k *keyProcessor) decryptKmsKek(kek []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("解密密钥失败: %w", err)
 	}
-	decodeDek, err := base64.StdEncoding.DecodeString(string(dek))
-	if err != nil {
-		return nil, fmt.Errorf("dek base64解密失败: %w", err)
-	}
-	logger.Debug("获取dek完毕=======", len(decodeDek))
+	logger.Debug("dek", len(dek))
+	//decodeDek, err := base64.StdEncoding.DecodeString(string(dek))
+	//if err != nil {
+	//	return nil, fmt.Errorf("dek base64解密失败: %w", err)
+	//}
+	//logger.Debug("获取dek完毕=======", len(decodeDek))
 
 	logger.Debug("===============end DEK encryption ...=================")
 
-	return decodeDek, err
+	return dek, err
 }
 
 func (k *keyProcessor) retrieveOrFetchDekKey(label string) ([]byte, error) {

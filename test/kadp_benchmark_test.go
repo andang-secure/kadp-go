@@ -224,15 +224,15 @@ func TestThroughput(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	label := "throughput-test-key"
-	key, err := myClient.CreateCipherKey(32, label, 1)
+	label := "throughput-test-key2"
+	_, err = myClient.CreateCipherKey(16, label, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 测试不同数据大小的吞吐量
-	dataSizes := []int{128, 512, 1024, 2048, 4096} // bytes
-	duration := 10 * time.Second                   // 测试持续时间
+	dataSizes := []int{128, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 50 * 1024 * 1024} // bytes
+	duration := 10 * time.Second                                                                                                 // 测试持续时间
 
 	for _, size := range dataSizes {
 		t.Run(fmt.Sprintf("Throughput-%dB", size), func(t *testing.T) {
@@ -259,8 +259,8 @@ func TestThroughput(t *testing.T) {
 				default:
 					_, err := myClient.Encipher(&kadp.EncipherRequest{
 						Plaintext: testData,
-						CipherKey: key,
-						Algorithm: kadp.AES,
+						//CipherKey: key,
+						Algorithm: kadp.SM4,
 						Mode:      kadp.ECB,
 						Padding:   kadp.NoPadding,
 						Label:     label,
@@ -276,8 +276,8 @@ func TestThroughput(t *testing.T) {
 			throughput := float64(count) / duration.Seconds()
 			dataRate := float64(count*size) / (1024 * 1024) / duration.Seconds() // MB/s
 
-			t.Logf("数据大小: %d bytes, 总操作数: %d, 吞吐量: %.2f ops/sec, 数据速率: %.2f MB/s",
-				size, count, throughput, dataRate)
+			t.Logf("数据大小: %d bytes, 总操作数: %d, 吞吐量: %.2f ops/sec, 数据速率: %.2f MB/s (%.2f Mbps)",
+				size, count, throughput, dataRate, dataRate*8)
 		})
 	}
 }
