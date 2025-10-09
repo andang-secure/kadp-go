@@ -222,9 +222,9 @@ func TestKadp(t *testing.T) {
 	fmt.Println("密钥列表：", list)
 
 	id, err := myClient.KeyManager.CreateKey(&kadp.CreateKeyRequest{
-		Name:      "kadp-test-11",
-		Algorithm: 1,
-		Size:      128,
+		Name:      "kadp-test-112",
+		Algorithm: 2,
+		Size:      1024,
 		KeyUsage:  "3",
 	})
 	if err != nil {

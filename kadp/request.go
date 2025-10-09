@@ -155,8 +155,7 @@ type DistributeKeyRequest struct {
 }
 
 type ExportKeyRequest struct {
-	CiphertextBlob    string `json:"ciphertext_blob"`    //使用主密钥加密的数据密钥
-	PublicKeyBlob     string `json:"public_key_blob"`    //base64格式的公钥
-	WrappingAlgorithm string `json:"wrapping_algorithm"` //公钥加密的类型
-	WrappingKeySpec   string `json:"wrapping_key_spec"`  //公钥类型
+	KeyId      string `json:"key_id"`
+	KeyName    string `json:"key_name"`
+	KeyVersion int64  `json:"key_version"`
 }

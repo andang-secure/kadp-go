@@ -14,7 +14,7 @@ import (
 )
 
 type KadpImpl interface {
-	CreateCipherKey(length int, label string) ([]byte, error)
+	CreateCipherKey(length int, label string, isStore int) ([]byte, error)
 	FpeEncipher(req *FpeEncipherRequest) (string, error)
 	FpeDecipher(req *FpeDecipherRequest) (string, error)
 	Encipher(req *EncipherRequest) (string, error)

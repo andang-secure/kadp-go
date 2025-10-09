@@ -182,19 +182,7 @@ func (km *KeyManager) DistributeKey(req *DistributeKeyRequest) error {
 }
 
 func (km *KeyManager) ExportKey(req *ExportKeyRequest) (*ExportKeyData, error) {
-	logger.Debug("开始密钥版本添加")
-	if req.WrappingAlgorithm == "" {
-		return nil, fmt.Errorf("请输入密钥包装算法")
-	}
-	if req.PublicKeyBlob == "" {
-		return nil, fmt.Errorf("请输入公钥blob")
-	}
-	if req.WrappingKeySpec == "" {
-		return nil, fmt.Errorf("请输入密钥包装密钥")
-	}
-	if req.CiphertextBlob == "" {
-		return nil, fmt.Errorf("请输入密文blob")
-	}
+	logger.Debug("开始导出")
 	exportKeyResp := ExportKeyRes{}
 
 	err := utils.SendRequest2(configs.POST, km.domain+"/v1/ksp/open_api/key/export", km.header,
