@@ -27,7 +27,7 @@ func TestKeyManage(t *testing.T) {
 	fmt.Println("ok")
 
 	createKeyRequest := &kadp.CreateKeyRequest{
-		Name:      "DBG_" + "1d1d1d",
+		Name:      "DBG_" + "1d1d1d2w1",
 		Algorithm: 4,
 		Size:      128,
 		KeyUsage:  "3,4",

@@ -467,25 +467,22 @@ func SendRequest2[T any](method, url string, header map[string]string, params in
 		log.Printf("[ERROR] 发送HTTP请求失败: %v", err)
 		return fmt.Errorf("发送请求失败: %w", err)
 	}
-	defer resp.Body.Close() // 确保响应体关闭
 
-	// 6. 校验HTTP响应状态码（新增！避免忽略404/500等错误）
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		// 读取错误响应体，便于排查
-		errBody, _ := io.ReadAll(resp.Body)
-		log.Printf("[ERROR] HTTP响应状态码异常: code=%d, body=%s", resp.StatusCode, string(errBody))
-		return fmt.Errorf("HTTP响应错误: 状态码=%d, 响应体=%s", resp.StatusCode, string(errBody))
-	}
-
-	// 7. 读取响应体（完整读取，避免截断）
+	// 1. 读取响应体一次
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("[ERROR] 读取HTTP响应体失败: %v", err)
 		return fmt.Errorf("读取响应体失败: %w", err)
 	}
-	log.Printf("[DEBUG] 接收HTTP响应: statusCode=%d, body=%s", resp.StatusCode, string(respBody))
+	defer resp.Body.Close()
 
-	// 8. 强类型解析响应体（核心优化：用自定义结构体匹配嵌套结构）
+	// 2. 校验HTTP响应状态码
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		log.Printf("[ERROR] HTTP响应状态码异常: code=%d, body=%s", resp.StatusCode, string(respBody))
+		return fmt.Errorf("HTTP响应错误: 状态码=%d, 响应体=%s", resp.StatusCode, string(respBody))
+	}
+
+	// 3. 强类型解析响应体
 	if err := json.Unmarshal(respBody, respObj); err != nil {
 		log.Printf("[ERROR] 响应体JSON解析失败: err=%v, body=%s", err, string(respBody))
 		return fmt.Errorf("响应体解析失败: %w (原始响应: %s)", err, string(respBody))
