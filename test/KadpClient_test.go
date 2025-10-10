@@ -34,7 +34,7 @@ func TestKadp(t *testing.T) {
 	//token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEP/z+clh1zM1fMnHmIVmepiB8y6IQC2GTmUVA7bfhfsbreTWy59jhDOQ+EnFLSau0R4NOLZv7ZopZZ88B5KuIde6HR7h4NvY4Rm8xrSVb17K/YfoYS59P4LOBzMjB4aSk74Z7C5Kk1nCosQBN7LH6eBewZKUAquBi4iXtw3MNpR+SCOoJKzZiWFWPyffmsb9MLpEWC7+VqzFdiPMsvA781aO1LbuU4UA/VpOzwoXIVuw8UskLbjhLNOG0ot6mHUKjiohmxGtYAmnac/ylx8/Fus6n69HzGCxdpm/406VnPz1eiCQvW5Zc8CNrcBeZQCdutCFCxNyNmPBm4e0t8pcqqjxeDacaWMCLnp8cvPKalQppcpVCVOGqHjhLTKbRoCOzPbR9X3I7GBii3gEbQg3Fqb6pTSLSyG9+8vlauD11amb"
 	//myClient, err := kadp.NewKADPClient(url, token, "Fps7T/jRIevtJih8GVcp02HmTWRIis//Fqd8LbbiOaPYI0tcSI1mCeh7ecInQC77", "keystore.jks", "123456")
 
-	label := "kadpx2w34"
+	label := "throughput-test-wd2cs"
 	_, err = myClient.CreateCipherKey(16, label, 1)
 	if err != nil {
 		t.Error(err)
@@ -219,9 +219,9 @@ func TestKadp(t *testing.T) {
 	fmt.Println("密钥列表：", list)
 
 	id, err := myClient.KeyManager.CreateKey(&kadp.CreateKeyRequest{
-		Name:      "kadp-test-1123",
-		Algorithm: 2,
-		Size:      1024,
+		Name:      "kadp-test-1123x3",
+		Algorithm: 4,
+		Size:      128,
 		KeyUsage:  "3",
 	})
 	if err != nil {

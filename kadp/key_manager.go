@@ -1,6 +1,7 @@
 package kadp
 
 import (
+	"errors"
 	"fmt"
 	"github.com/andang-secure/kadp-go/configs"
 	"github.com/andang-secure/kadp-go/utils"
@@ -52,6 +53,9 @@ func (km *KeyManager) CreateKey(req *CreateKeyRequest) (id int64, err error) {
 	logger.Debug("开始创建密钥")
 	if req.Name == "" {
 		return 0, fmt.Errorf("请输入密钥名称")
+	}
+	if req.Size != 128 && req.Size != 192 && req.Size != 256 {
+		return 0, errors.New("key length must be 128, 192, or 256")
 	}
 	createKeyResp := createKeyRes{}
 

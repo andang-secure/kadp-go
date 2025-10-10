@@ -1,11 +1,11 @@
 package test
 
 import (
-	"crypto/rand"
 	"fmt"
 	"github.com/andang-secure/kadp-go/configs"
 	"github.com/andang-secure/kadp-go/kadp"
 	logger "github.com/sirupsen/logrus"
+	"math/rand"
 	"sync"
 	"testing"
 	"time"
@@ -224,15 +224,15 @@ func TestThroughput(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	label := "throughput-test-key2"
-	_, err = myClient.CreateCipherKey(16, label, 1)
+	label := "throughput-test-cf"
+	_, err = myClient.CreateCipherKey(24, label, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 测试不同数据大小的吞吐量
-	dataSizes := []int{128, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 50 * 1024 * 1024} // bytes
-	duration := 10 * time.Second                                                                                                 // 测试持续时间
+	dataSizes := []int{128, 512, 1024, 2048, 4096, 8192, 16384, 16384, 50 * 1024 * 1024, 100 * 1024 * 1024, 200 * 1024 * 1024} // bytes
+	duration := 5 * time.Second                                                                                                // 测试持续时间
 
 	for _, size := range dataSizes {
 		t.Run(fmt.Sprintf("Throughput-%dB", size), func(t *testing.T) {
@@ -260,7 +260,7 @@ func TestThroughput(t *testing.T) {
 					_, err := myClient.Encipher(&kadp.EncipherRequest{
 						Plaintext: testData,
 						//CipherKey: key,
-						Algorithm: kadp.SM4,
+						Algorithm: kadp.DES,
 						Mode:      kadp.ECB,
 						Padding:   kadp.NoPadding,
 						Label:     label,
@@ -280,4 +280,102 @@ func TestThroughput(t *testing.T) {
 				size, count, throughput, dataRate, dataRate*8)
 		})
 	}
+}
+func TestFPEThroughput(t *testing.T) {
+	logger.SetLevel(logger.ErrorLevel)
+
+	url := "http://192.168.0.129:8190"
+	RegisterToken := "hnludUczLOwZfj0t84j1Eh0btPVNviLgPSjOfuS8oKaNNLACoKUd56YNb31jzU+d"
+	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEMQiHkMEfcYVm5LCUFDACn/4uYJNqpgHbrttZD1lDkyDuKsYM0MixYY2ZkImWaSB72eZX0pGbMKoOk5e4nAvIRcHEcQc8Lk/BmHMBRmK10wsziUiedJJB5rDzTEy2cC1/+v5f2gsHfXNjEY0aJmvegzuD2PKC72TTofMnvzJz2abUUafgTjCRnGe3x4iTN5ZKUtx/89hfUahPcUD5H9hreRPVpFvEk/XV3yV3B3OhI2N1Lpops2R20qfdl/2VfKbhIklvHWEL1UoWmGUII6G4jOTr0FZoKOXwnlvasbTdkiFGgGI+EUgbgYh4+r8Z875ADNEF+Uwae1UWKHs7Brrf9pB/bvkrWJIr4q1bduMYMLb3sYjkjchlyfwd+5WIESIcAmQaB1V5ChLDSMOXudqAh9jnuibzNGkBjAcwMRTB+K0b5mTkwyXIJTUSIIHvco8IZLVoPWGrDX/nEamGuzqbGE="
+
+	myClient, err := kadp.NewKADPClient(&configs.KmsConfig{
+		Domain:           url,
+		Credential:       token,
+		RegisterToken:    RegisterToken,
+		KeystoreFileName: "keystore1.jks",
+		KeystorePassword: "123456",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	label := "fpe-throughput-test-key2"
+	key, err := myClient.CreateCipherKey(16, label, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// FPE测试数据 - 不同长度的数字字符串
+	testDataSizes := []int{16, 32, 64, 128, 20000} // 字符长度
+	duration := 10 * time.Second                   // 测试持续时间
+
+	for _, size := range testDataSizes {
+		t.Run(fmt.Sprintf("FPE-Throughput-%dchars", size), func(t *testing.T) {
+			// 生成指定长度的数字字符串
+			plaintext := generateNumericString(size)
+			tweak := "1234567"       // 固定tweak
+			alphabet := "0123456789" // 数字字母表
+
+			count := 0
+			totalTime := time.Duration(0)
+			done := make(chan bool)
+
+			// 在指定时间内持续发送请求
+			go func() {
+				time.Sleep(duration)
+				done <- true
+			}()
+
+		encryptionLoop:
+			for {
+				select {
+				case <-done:
+					break encryptionLoop
+				default:
+					start := time.Now()
+					_, err := myClient.FpeEncipher(&kadp.FpeEncipherRequest{
+						Plaintext: plaintext,
+						CipherKey: key,
+						Fpe:       kadp.FF1,
+						Tweak:     tweak,
+						Alphabet:  alphabet,
+						Label:     label,
+						Start:     0,
+						End:       len(plaintext),
+					})
+					elapsed := time.Since(start)
+					totalTime += elapsed
+
+					if err != nil {
+						t.Error(err)
+						break encryptionLoop
+					}
+					count++
+				}
+			}
+
+			throughput := float64(count) / duration.Seconds()
+			dataRate := float64(count*size) / (1024 * 1024) / duration.Seconds() // MB/s
+
+			// 计算平均耗时(毫秒)
+			var avgTimePerOperation float64
+			if count > 0 {
+				avgTimePerOperation = float64(totalTime.Microseconds()) / float64(count) / 1000 // 转换为毫秒
+			}
+
+			t.Logf("数据大小: %d chars, 总操作数: %d, 吞吐量: %.2f ops/sec, 数据速率: %.2f MB/s (%.2f Mbps), 平均耗时: %.4f ms",
+				size, count, throughput, dataRate, dataRate*8, avgTimePerOperation)
+		})
+	}
+}
+
+// 生成指定长度的数字字符串
+func generateNumericString(length int) string {
+	const charset = "0123456789"
+	result := make([]byte, length)
+	// 使用 math/rand 生成随机数
+	for i := range result {
+		result[i] = charset[rand.Intn(len(charset))]
+	}
+	return string(result)
 }
