@@ -125,6 +125,7 @@ type CreateKeyRequest struct {
 	Algorithm int    `json:"algorithm"`
 	Size      int    `json:"size"`
 	KeyUsage  string `json:"key_usage"`
+	Label     string `json:"label"`
 }
 
 type deleteKeyRequest struct {

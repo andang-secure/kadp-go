@@ -218,17 +218,50 @@ func TestKadp(t *testing.T) {
 	}
 	fmt.Println("密钥列表：", list)
 
+	name := "kadp-test-1123x31111"
 	id, err := myClient.KeyManager.CreateKey(&kadp.CreateKeyRequest{
-		Name:      "kadp-test-1123x3",
+		Name:      name,
 		Algorithm: 4,
 		Size:      128,
 		KeyUsage:  "3",
+		Label:     name,
 	})
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	fmt.Println("密钥创建：", id)
+
+	encipher2, err := myClient.Encipher(&kadp.EncipherRequest{
+		Plaintext: []byte(data),
+		//CipherKey: key,
+		Algorithm: kadp.SM4,
+		Mode:      kadp.ECB,
+		Padding:   kadp.NoPadding,
+		Label:     name,
+		IV:        iv,
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Println("AES密文" + encipher2)
+
+	plaintext2, err := myClient.Decipher(&kadp.DecryptRequest{
+		Ciphertext: encipher,
+		//CipherKey:  key,
+		Algorithm: kadp.SM4,
+		Mode:      kadp.ECB,
+		Padding:   kadp.NoPadding,
+		Label:     name,
+		IV:        iv,
+	})
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Println("解密", string(plaintext2))
 
 	keyInfo, err := myClient.KeyManager.GetKeyInfo(id)
 	if err != nil {
