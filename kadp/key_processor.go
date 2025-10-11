@@ -186,6 +186,11 @@ func (k *keyProcessor) retrieveOrFetchDekKey(label string) ([]byte, error) {
 	kek, err := utils.NewKeyStoreObj().RetrieveSecretKey(label)
 	if err != nil {
 		logger.Debug("密钥不存在", err.Error())
+
+		kek, err = k.fetchAndCacheKek(label, 16, 1)
+		if err != nil {
+			return nil, fmt.Errorf("获取kek密钥失败: %w", err)
+		}
 		//kek, err = k.fetchAndCacheKek(label, 16,)
 		//if err != nil {
 		//	return nil, err

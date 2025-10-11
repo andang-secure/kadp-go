@@ -30,6 +30,40 @@ func TestKadp(t *testing.T) {
 		return
 	}
 
+	label2 := "kadp-test-1123x311113x"
+	//AES
+	data := "1234567891234567"
+	iv := "1234567891234567"
+	encipher, err := myClient.Encipher(&kadp.EncipherRequest{
+		Plaintext: []byte(data),
+		//CipherKey: key,
+		Algorithm: kadp.SM4,
+		Mode:      kadp.ECB,
+		Padding:   kadp.NoPadding,
+		Label:     label2,
+		IV:        iv,
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Println("AES密文" + encipher)
+
+	plaintext, err := myClient.Decipher(&kadp.DecryptRequest{
+		Ciphertext: encipher,
+		//CipherKey:  key,
+		Algorithm: kadp.SM4,
+		Mode:      kadp.ECB,
+		Padding:   kadp.NoPadding,
+		Label:     label2,
+		IV:        iv,
+	})
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	fmt.Println("解密", string(plaintext))
 	//url := "https://192.168.0.135:8390"
 	//token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEP/z+clh1zM1fMnHmIVmepiB8y6IQC2GTmUVA7bfhfsbreTWy59jhDOQ+EnFLSau0R4NOLZv7ZopZZ88B5KuIde6HR7h4NvY4Rm8xrSVb17K/YfoYS59P4LOBzMjB4aSk74Z7C5Kk1nCosQBN7LH6eBewZKUAquBi4iXtw3MNpR+SCOoJKzZiWFWPyffmsb9MLpEWC7+VqzFdiPMsvA781aO1LbuU4UA/VpOzwoXIVuw8UskLbjhLNOG0ot6mHUKjiohmxGtYAmnac/ylx8/Fus6n69HzGCxdpm/406VnPz1eiCQvW5Zc8CNrcBeZQCdutCFCxNyNmPBm4e0t8pcqqjxeDacaWMCLnp8cvPKalQppcpVCVOGqHjhLTKbRoCOzPbR9X3I7GBii3gEbQg3Fqb6pTSLSyG9+8vlauD11amb"
 	//myClient, err := kadp.NewKADPClient(url, token, "Fps7T/jRIevtJih8GVcp02HmTWRIis//Fqd8LbbiOaPYI0tcSI1mCeh7ecInQC77", "keystore.jks", "123456")
@@ -77,40 +111,6 @@ func TestKadp(t *testing.T) {
 		return
 	}
 	fmt.Println("FPE明文：" + decipher)
-
-	//AES
-	data := "1234567891234567"
-	iv := "1234567891234567"
-	encipher, err := myClient.Encipher(&kadp.EncipherRequest{
-		Plaintext: []byte(data),
-		//CipherKey: key,
-		Algorithm: kadp.SM4,
-		Mode:      kadp.ECB,
-		Padding:   kadp.NoPadding,
-		Label:     label,
-		IV:        iv,
-	})
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	fmt.Println("AES密文" + encipher)
-
-	plaintext, err := myClient.Decipher(&kadp.DecryptRequest{
-		Ciphertext: encipher,
-		//CipherKey:  key,
-		Algorithm: kadp.SM4,
-		Mode:      kadp.ECB,
-		Padding:   kadp.NoPadding,
-		Label:     label,
-		IV:        iv,
-	})
-
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	fmt.Println("解密", string(plaintext))
 
 	//非对称加解密
 	pub, pri, err := myClient.AsymmetricKeyPair(kadp.SM2)
@@ -218,7 +218,7 @@ func TestKadp(t *testing.T) {
 	}
 	fmt.Println("密钥列表：", list)
 
-	name := "kadp-test-1123x31111"
+	name := "kadp-test-1123x311113x"
 	id, err := myClient.KeyManager.CreateKey(&kadp.CreateKeyRequest{
 		Name:      name,
 		Algorithm: 4,
