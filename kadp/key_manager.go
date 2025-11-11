@@ -35,7 +35,7 @@ func (km *KeyManager) SecretKeyList(keyListParam *KeyListParam) (*KeyList, error
 	err := utils.GetRequest(configs.GET, km.domain+"/v1/ksp/open_api/key/list", km.header, map[string]interface{}{
 		"page":      keyListParam.Page,     // 页码
 		"page_size": keyListParam.PageSize, // 每页条数
-	}, false, &keyListResp)
+	}, true, &keyListResp)
 
 	if err != nil {
 		return nil, fmt.Errorf("列表请求失败: %w", err)
@@ -55,7 +55,7 @@ func (km *KeyManager) CreateKey(req *CreateKeyRequest) (id int64, err error) {
 	}
 	createKeyResp := createKeyRes{}
 
-	err = utils.SendRequest2(configs.POST, km.domain+"/v1/ksp/open_api/key/create", km.header, req, false, &createKeyResp)
+	err = utils.SendRequest2(configs.POST, km.domain+"/v1/ksp/open_api/key/create", km.header, req, true, &createKeyResp)
 	if err != nil {
 		return 0, fmt.Errorf("创建密钥失败: %w", err)
 	}
@@ -73,7 +73,7 @@ func (km *KeyManager) GetKeyInfo(id int64) (*KeyInfoData, error) {
 	KeyInfoRes := keyInfoRes{}
 	err := utils.GetRequest(configs.GET, km.domain+"/v1/ksp/open_api/key/info", km.header, map[string]interface{}{
 		"id": id,
-	}, false, &KeyInfoRes)
+	}, true, &KeyInfoRes)
 
 	if err != nil {
 		return nil, fmt.Errorf("列表请求失败: %w", err)
@@ -93,7 +93,7 @@ func (km *KeyManager) DeleteKey(id int64) error {
 	deleteKeyResp := commonRes{}
 
 	err := utils.SendRequest2(configs.DELETE, km.domain+"/v1/ksp/open_api/key/delete",
-		km.header, &deleteKeyRequest{Id: id}, false, &deleteKeyResp)
+		km.header, &deleteKeyRequest{Id: id}, true, &deleteKeyResp)
 	if err != nil {
 		return fmt.Errorf("创建密钥失败: %w", err)
 	}
@@ -111,7 +111,7 @@ func (km *KeyManager) UpdateKey(req *UpdateKeyRequest) error {
 	updateKeyResp := commonRes{}
 
 	err := utils.SendRequest2(configs.POST, km.domain+"/v1/ksp/open_api/key/update", km.header,
-		req, false, &updateKeyResp)
+		req, true, &updateKeyResp)
 	if err != nil {
 		return fmt.Errorf("创建密钥失败: %w", err)
 	}
@@ -129,7 +129,7 @@ func (km *KeyManager) AddKeyVersion(id int64) error {
 	addKeyVersionResp := commonRes{}
 
 	err := utils.SendRequest2(configs.POST, km.domain+"/v1/ksp/open_api/key/addversion", km.header,
-		&commonKidRequest{Id: id}, false, &addKeyVersionResp)
+		&commonKidRequest{Id: id}, true, &addKeyVersionResp)
 	if err != nil {
 		return fmt.Errorf("创建密钥失败: %w", err)
 	}
@@ -150,7 +150,7 @@ func (km *KeyManager) CloneKey(req *CloneKeyRequest) error {
 	cloneKeyResp := commonRes{}
 
 	err := utils.SendRequest2(configs.POST, km.domain+"/v1/ksp/open_api/key/clone", km.header,
-		req, false, &cloneKeyResp)
+		req, true, &cloneKeyResp)
 	if err != nil {
 		return fmt.Errorf("创建密钥失败: %w", err)
 	}
@@ -171,7 +171,7 @@ func (km *KeyManager) DistributeKey(req *DistributeKeyRequest) error {
 	cloneKeyResp := commonRes{}
 
 	err := utils.SendRequest2(configs.POST, km.domain+"/v1/ksp/open_api/key/distribute", km.header,
-		req, false, &cloneKeyResp)
+		req, true, &cloneKeyResp)
 	if err != nil {
 		return fmt.Errorf("创建密钥失败: %w", err)
 	}
@@ -186,7 +186,7 @@ func (km *KeyManager) ExportKey(req *ExportKeyRequest) (*ExportKeyData, error) {
 	exportKeyResp := ExportKeyRes{}
 
 	err := utils.SendRequest2(configs.POST, km.domain+"/v1/ksp/open_api/key/export", km.header,
-		req, false, &exportKeyResp)
+		req, true, &exportKeyResp)
 	if err != nil {
 		return nil, fmt.Errorf("创建密钥失败: %w", err)
 	}

@@ -15,9 +15,9 @@ func TestKadp(t *testing.T) {
 	//myClient, err := kadp.NewKADPClient(url, token, "QVSxoBH+SsUH9Vl3UC3D7YGV4tw5vaI7T/joivh/7FECvH06rcTwJvHjxvzdy8cD", "keystore.jks", "123456")
 
 	logger.SetLevel(logger.DebugLevel)
-	url := "http://192.168.0.129:8190"
-	RegisterToken := "hnludUczLOwZfj0t84j1Eh0btPVNviLgPSjOfuS8oKaNNLACoKUd56YNb31jzU+d"
-	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEMQiHkMEfcYVm5LCUFDACn/4uYJNqpgHbrttZD1lDkyDuKsYM0MixYY2ZkImWaSB72eZX0pGbMKoOk5e4nAvIRcHEcQc8Lk/BmHMBRmK10wsziUiedJJB5rDzTEy2cC1/+v5f2gsHfXNjEY0aJmvegzuD2PKC72TTofMnvzJz2abUUafgTjCRnGe3x4iTN5ZKUtx/89hfUahPcUD5H9hreRPVpFvEk/XV3yV3B3OhI2N1Lpops2R20qfdl/2VfKbhIklvHWEL1UoWmGUII6G4jOTr0FZoKOXwnlvasbTdkiFGgGI+EUgbgYh4+r8Z875ADNEF+Uwae1UWKHs7Brrf9pB/bvkrWJIr4q1bduMYMLb3sYjkjchlyfwd+5WIESIcAmQaB1V5ChLDSMOXudqAh9jnuibzNGkBjAcwMRTB+K0b5mTkwyXIJTUSIIHvco8IZLVoPWGrDX/nEamGuzqbGE="
+	url := "http://192.168.0.135:8890"
+	RegisterToken := "oBTR0gCzPVhAPynoCmWKw8ptBxXcIox+bBjUhEY0daVtlS7Khwhl6Do7H8B8fQRN"
+	token := "epYu8UNoLOYNBJPYLVaTdCXCZvK7ku9leEyWZjA58DVqjJ8fLfbmO29T6Amusg45iR2WDsAbGgalED1iXD/rEMQiHkMEfcYVm5LCUFDACn/4uYJNqpgHbrttZD1lDkyDuKsYM0MixYY2ZkImWaSB72eZX0pGbMKoOk5e4nAvIRcHEcQc8Lk/BmHMBRmK10wsziUiedJJB5rDzTEy2cC1/+v5f2gsHfXNjEY0aJmvegzuD2PKC72TTofMnvzJz2abUUafgTjCRnGe3x4iTN5ZKUtx/89hfUahPcUD5H9hreRPVpFvEk/XV3yV3B3OhI2Ne01Pco8u1J4egQRBSFcRZ6ES2jsV2MFGiE8KWxkFVpVDNJX+/N02YehdGJ4diIvAWYCY+P6isaNIXQBcJqoQHm9akMBMY4ZhCy4xu6e6Adu8w0sTUvecHLaQf1OI9QZ7RIU5LDA2DXImbe7yNuLJGzO6dqLonXpbx3B7c18TQF5mg2ap53A0jwVIFocd/m3VZA3zRouHyWYE0VWMzNEN3w=="
 	myClient, err := kadp.NewKADPClient(&configs.KmsConfig{
 		Domain:           url,
 		Credential:       token,
@@ -30,7 +30,9 @@ func TestKadp(t *testing.T) {
 		return
 	}
 
-	label2 := "kadp-test-1123x311113x"
+	//label2 := "DBG-d39dc41f-dabc-4d9b-9d8e-757e639985372"
+	label1 := "DBG-d39dc41f-dabc-4d9b-9d8e-757e639985372"
+
 	//AES
 	data := "1234567891234567"
 	iv := "1234567891234567"
@@ -40,7 +42,7 @@ func TestKadp(t *testing.T) {
 		Algorithm: kadp.SM4,
 		Mode:      kadp.ECB,
 		Padding:   kadp.NoPadding,
-		Label:     label2,
+		Label:     label1,
 		IV:        iv,
 	})
 	if err != nil {
@@ -55,7 +57,7 @@ func TestKadp(t *testing.T) {
 		Algorithm: kadp.SM4,
 		Mode:      kadp.ECB,
 		Padding:   kadp.NoPadding,
-		Label:     label2,
+		Label:     label1,
 		IV:        iv,
 	})
 
@@ -218,10 +220,10 @@ func TestKadp(t *testing.T) {
 	}
 	fmt.Println("密钥列表：", list)
 
-	name := "kadp-test-1123x311113x"
+	name := "kadp-test-mkjg4442"
 	id, err := myClient.KeyManager.CreateKey(&kadp.CreateKeyRequest{
 		Name:      name,
-		Algorithm: 4,
+		Algorithm: 1,
 		Size:      128,
 		KeyUsage:  "3",
 		Label:     name,
