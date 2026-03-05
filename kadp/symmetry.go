@@ -98,7 +98,10 @@ func aseCbcPaddingEncrypt(req *EncipherRequest, key []byte) (string, error) {
 	case PKCS5Padding:
 		req.Plaintext = pKCS5Padding(req.Plaintext, blockSize)
 	case PKCS7Padding:
-		req.Plaintext = pKCS7Padding(req.Plaintext, blockSize)
+		req.Plaintext, err = pKCS7Padding(req.Plaintext, blockSize)
+		if err != nil {
+			return "", err
+		}
 	case ISO10126Padding:
 		req.Plaintext = iSO10126Padding(req.Plaintext)
 	case ZeroPadding:
@@ -141,7 +144,10 @@ func aseCbcPaddingDecrypt(req *DecryptRequest, key []byte) ([]byte, error) {
 	case PKCS5Padding:
 		origData = pKCS5UnPadding(origData)
 	case PKCS7Padding:
-		origData = pKCS7UnPadding(origData)
+		origData, err = pKCS7UnPadding(origData)
+		if err != nil {
+			return nil, err
+		}
 	case ISO10126Padding:
 		origData = iSO10126UnPadding(origData)
 	case ZeroPadding:
@@ -234,7 +240,10 @@ func aesCtrPaddingEncrypt(req *EncipherRequest, key []byte) (string, error) {
 	case PKCS5Padding:
 		req.Plaintext = pKCS5Padding(req.Plaintext, blockSize)
 	case PKCS7Padding:
-		req.Plaintext = pKCS7Padding(req.Plaintext, blockSize)
+		req.Plaintext, err = pKCS7Padding(req.Plaintext, blockSize)
+		if err != nil {
+			return "", err
+		}
 	case ISO10126Padding:
 		req.Plaintext = iSO10126Padding(req.Plaintext)
 	case ZeroPadding:
@@ -285,7 +294,10 @@ func aesCtrPaddingDecrypt(req *DecryptRequest, key []byte) ([]byte, error) {
 	case PKCS5Padding:
 		dst = pKCS5UnPadding(dst)
 	case PKCS7Padding:
-		dst = pKCS7UnPadding(dst)
+		dst, err = pKCS7UnPadding(dst)
+		if err != nil {
+			return nil, err
+		}
 	case ISO10126Padding:
 		dst = iSO10126UnPadding(dst)
 	case ZeroPadding:
@@ -383,7 +395,10 @@ func aesEcbPaddingEncrypt(req *EncipherRequest, key []byte) (string, error) {
 	case PKCS5Padding:
 		req.Plaintext = pKCS5Padding(req.Plaintext, blockSize)
 	case PKCS7Padding:
-		req.Plaintext = pKCS7Padding(req.Plaintext, blockSize)
+		req.Plaintext, err = pKCS7Padding(req.Plaintext, blockSize)
+		if err != nil {
+			return "", err
+		}
 	case ISO10126Padding:
 		req.Plaintext = iSO10126Padding(req.Plaintext)
 	case ZeroPadding:
@@ -434,7 +449,10 @@ func aesEcbPaddingDecrypt(req *DecryptRequest, key []byte) ([]byte, error) {
 	case PKCS5Padding:
 		plaintext = pKCS5UnPadding(plaintext)
 	case PKCS7Padding:
-		plaintext = pKCS7UnPadding(plaintext)
+		plaintext, err = pKCS7UnPadding(plaintext)
+		if err != nil {
+			return nil, err
+		}
 	case ISO10126Padding:
 		plaintext = iSO10126UnPadding(plaintext)
 	case ZeroPadding:
@@ -516,7 +534,10 @@ func aesCfbPaddingEncrypt(req *EncipherRequest, key []byte) (string, error) {
 	case PKCS5Padding:
 		req.Plaintext = pKCS5Padding(req.Plaintext, blockSize)
 	case PKCS7Padding:
-		req.Plaintext = pKCS7Padding(req.Plaintext, blockSize)
+		req.Plaintext, err = pKCS7Padding(req.Plaintext, blockSize)
+		if err != nil {
+			return "", err
+		}
 	case ISO10126Padding:
 		req.Plaintext = iSO10126Padding(req.Plaintext)
 	case ZeroPadding:
@@ -557,7 +578,10 @@ func aesCfbPaddingDecrypt(req *DecryptRequest, key []byte) ([]byte, error) {
 	case PKCS5Padding:
 		plainText = pKCS5UnPadding(plainText)
 	case PKCS7Padding:
-		plainText = pKCS7UnPadding(plainText)
+		plainText, err = pKCS7UnPadding(plainText)
+		if err != nil {
+			return nil, err
+		}
 	case ISO10126Padding:
 		plainText = iSO10126UnPadding(plainText)
 	case ZeroPadding:
@@ -643,7 +667,10 @@ func aesOfbPaddingEncrypt(req *EncipherRequest, key []byte) (string, error) {
 	case PKCS5Padding:
 		req.Plaintext = pKCS5Padding(req.Plaintext, blockSize)
 	case PKCS7Padding:
-		req.Plaintext = pKCS7Padding(req.Plaintext, blockSize)
+		req.Plaintext, err = pKCS7Padding(req.Plaintext, blockSize)
+		if err != nil {
+			return "", err
+		}
 	case ISO10126Padding:
 		req.Plaintext = iSO10126Padding(req.Plaintext)
 	case ZeroPadding:
@@ -686,7 +713,10 @@ func aesOfbPaddingDecrypt(req *DecryptRequest, key []byte) ([]byte, error) {
 	case PKCS5Padding:
 		plainText = pKCS5UnPadding(plainText)
 	case PKCS7Padding:
-		plainText = pKCS7UnPadding(plainText)
+		plainText, err = pKCS7UnPadding(plainText)
+		if err != nil {
+			return nil, err
+		}
 	case ISO10126Padding:
 		plainText = iSO10126UnPadding(plainText)
 	case ZeroPadding:
@@ -806,7 +836,10 @@ func aesGcmPaddingEncrypt(req *EncipherRequest, key []byte) (string, error) {
 	case PKCS5Padding:
 		req.Plaintext = pKCS5Padding(req.Plaintext, blockSize)
 	case PKCS7Padding:
-		req.Plaintext = pKCS7Padding(req.Plaintext, blockSize)
+		req.Plaintext, err = pKCS7Padding(req.Plaintext, blockSize)
+		if err != nil {
+			return "", err
+		}
 	case ISO10126Padding:
 		req.Plaintext = iSO10126Padding(req.Plaintext)
 	case ZeroPadding:
@@ -860,7 +893,10 @@ func aesGcmPaddingDecrypt(req *DecryptRequest, key []byte) ([]byte, error) {
 	case PKCS5Padding:
 		plainText = pKCS5UnPadding(plainText)
 	case PKCS7Padding:
-		plainText = pKCS7UnPadding(plainText)
+		plainText, err = pKCS7UnPadding(plainText)
+		if err != nil {
+			return nil, err
+		}
 	case ISO10126Padding:
 		plainText = iSO10126UnPadding(plainText)
 	case ZeroPadding:
@@ -883,16 +919,54 @@ func pKCS5UnPadding(origData []byte) []byte {
 }
 
 // PKCS7补全
-func pKCS7Padding(plaintext []byte, blockSize int) []byte {
+func pKCS7Padding(plaintext []byte, blockSize int) ([]byte, error) {
+	// 1. 校验块长度合法性（必须>0）
+	if blockSize <= 0 {
+		return nil, fmt.Errorf("无效的块长度[%d]，必须大于0", blockSize)
+	}
+
+	// 2. 计算填充长度（符合PKCS7规则：空数据填充blockSize个字节）
 	padding := blockSize - len(plaintext)%blockSize
+
+	// 3. 生成填充字节（padding个0xpadding）
 	padText := bytes.Repeat([]byte{byte(padding)}, padding)
-	return append(plaintext, padText...)
+
+	// 4. 拼接并返回
+	return append(plaintext, padText...), nil
 }
 
-// PKCS7去除补全
-func pKCS7UnPadding(plaintext []byte) []byte {
-	padding := int(plaintext[len(plaintext)-1])
-	return plaintext[:len(plaintext)-padding]
+// pKCS7UnPadding PKCS7解填充（生产级版本）
+// 参数：
+//
+//	plaintext - 解密后带填充的数据集
+//
+// 返回：
+//
+//	解填充后的原始数据 + 错误（nil表示成功）
+func pKCS7UnPadding(plaintext []byte) ([]byte, error) {
+	// 1. 校验数据非空
+	length := len(plaintext)
+	if length == 0 {
+		return nil, fmt.Errorf("解填充失败：数据为空")
+	}
+
+	// 2. 读取最后1字节作为填充长度
+	padding := int(plaintext[length-1])
+
+	// 3. 校验填充长度合法性（必须>0且≤数据长度）
+	if padding <= 0 || padding > length {
+		return nil, fmt.Errorf("解填充失败：无效的填充长度[%d]，数据长度[%d]", padding, length)
+	}
+
+	// 4. 校验所有填充字节是否合法（防数据篡改/解密错误）
+	for i := length - padding; i < length; i++ {
+		if int(plaintext[i]) != padding {
+			return nil, fmt.Errorf("解填充失败：填充字节不合法，位置[%d]值[%d]≠填充长度[%d]", i, plaintext[i], padding)
+		}
+	}
+
+	// 5. 安全截取原始数据（此时padding必然合法，不会越界）
+	return plaintext[:length-padding], nil
 }
 
 func iSO10126Padding(plaintext []byte) []byte {
