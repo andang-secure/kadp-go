@@ -48,7 +48,7 @@ func (k *keyProcessor) fetchAndCacheKek(label string, length int, isStore int) (
 
 	// 检查业务状态码
 	if kekRes.Code != 0 {
-		return nil, fmt.Errorf("ksm server err: %s", kekRes.Msg) // 修正错误包装方式
+		return nil, fmt.Errorf("kms server err: %s", kekRes.Msg) // 修正错误包装方式
 	}
 
 	//decryptedKek
@@ -155,7 +155,7 @@ func (k *keyProcessor) decryptKmsKek(kek []byte) ([]byte, error) {
 
 	// 检查业务状态码
 	if kekRes.Code != 0 {
-		return nil, fmt.Errorf("ksm server err: %s", kekRes.Msg) // 修正错误包装方式
+		return nil, fmt.Errorf("kms server err: %s", kekRes.Msg) // 修正错误包装方式
 	}
 	logger.Debug("获取dek密文完毕", kekRes.Data)
 
@@ -170,8 +170,9 @@ func (k *keyProcessor) decryptKmsKek(kek []byte) ([]byte, error) {
 	//	return nil, fmt.Errorf("dek base64解密失败: %w", err)
 	//}
 	//logger.Debug("获取dek完毕=======", len(decodeDek))
-
-	logger.Debug("===============end DEK encryption ...=================")
+	//
+	//logger.Debug("decodeDek: ", string(decodeDek))
+	//logger.Debug("===============end DEK encryption ...=================")
 
 	return dek, err
 }

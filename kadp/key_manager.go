@@ -42,7 +42,7 @@ func (km *KeyManager) SecretKeyList(keyListParam *KeyListParam) (*KeyList, error
 	}
 	// 检查业务状态码
 	if keyListResp.Code != 0 {
-		return nil, fmt.Errorf("ksm server err: %s", keyListResp.Msg) // 修正错误包装方式
+		return nil, fmt.Errorf("kms server err: %s", keyListResp.Msg) // 修正错误包装方式
 	}
 
 	return &keyListResp.Data, nil
@@ -60,7 +60,7 @@ func (km *KeyManager) CreateKey(req *CreateKeyRequest) (id int64, err error) {
 		return 0, fmt.Errorf("创建密钥失败: %w", err)
 	}
 	if createKeyResp.Code != 0 {
-		return 0, fmt.Errorf("ksm server err: %s", createKeyResp.Msg) // 修正错误包装方式
+		return 0, fmt.Errorf("kms server err: %s", createKeyResp.Msg) // 修正错误包装方式
 	}
 	return createKeyResp.Data.Id, nil
 }
@@ -80,7 +80,7 @@ func (km *KeyManager) GetKeyInfo(id int64) (*KeyInfoData, error) {
 	}
 	// 检查业务状态码
 	if KeyInfoRes.Code != 0 {
-		return nil, fmt.Errorf("ksm server err: %s", KeyInfoRes.Msg) // 修正错误包装方式
+		return nil, fmt.Errorf("kms server err: %s", KeyInfoRes.Msg) // 修正错误包装方式
 	}
 	return &KeyInfoRes.Data, nil
 }
@@ -98,7 +98,7 @@ func (km *KeyManager) DeleteKey(id int64) error {
 		return fmt.Errorf("创建密钥失败: %w", err)
 	}
 	if deleteKeyResp.Code != 0 {
-		return fmt.Errorf("ksm server err: %s", deleteKeyResp.Msg) // 修正错误包装方式
+		return fmt.Errorf("kms server err: %s", deleteKeyResp.Msg) // 修正错误包装方式
 	}
 	return nil
 }
@@ -116,7 +116,7 @@ func (km *KeyManager) UpdateKey(req *UpdateKeyRequest) error {
 		return fmt.Errorf("创建密钥失败: %w", err)
 	}
 	if updateKeyResp.Code != 0 {
-		return fmt.Errorf("ksm server err: %s", updateKeyResp.Msg) // 修正错误包装方式
+		return fmt.Errorf("kms server err: %s", updateKeyResp.Msg) // 修正错误包装方式
 	}
 	return nil
 }
@@ -134,7 +134,7 @@ func (km *KeyManager) AddKeyVersion(id int64) error {
 		return fmt.Errorf("创建密钥失败: %w", err)
 	}
 	if addKeyVersionResp.Code != 0 {
-		return fmt.Errorf("ksm server err: %s", addKeyVersionResp.Msg) // 修正错误包装方式
+		return fmt.Errorf("kms server err: %s", addKeyVersionResp.Msg) // 修正错误包装方式
 	}
 	return nil
 }
@@ -155,7 +155,7 @@ func (km *KeyManager) CloneKey(req *CloneKeyRequest) error {
 		return fmt.Errorf("创建密钥失败: %w", err)
 	}
 	if cloneKeyResp.Code != 0 {
-		return fmt.Errorf("ksm server err: %s", cloneKeyResp.Msg) // 修正错误包装方式
+		return fmt.Errorf("kms server err: %s", cloneKeyResp.Msg) // 修正错误包装方式
 	}
 	return nil
 }
@@ -176,7 +176,7 @@ func (km *KeyManager) DistributeKey(req *DistributeKeyRequest) error {
 		return fmt.Errorf("创建密钥失败: %w", err)
 	}
 	if cloneKeyResp.Code != 0 {
-		return fmt.Errorf("ksm server err: %s", cloneKeyResp.Msg) // 修正错误包装方式
+		return fmt.Errorf("kms server err: %s", cloneKeyResp.Msg) // 修正错误包装方式
 	}
 	return nil
 }
@@ -191,7 +191,7 @@ func (km *KeyManager) ExportKey(req *ExportKeyRequest) (*ExportKeyData, error) {
 		return nil, fmt.Errorf("创建密钥失败: %w", err)
 	}
 	if exportKeyResp.Code != 0 {
-		return nil, fmt.Errorf("ksm server err: %s", exportKeyResp.Msg) // 修正错误包装方式
+		return nil, fmt.Errorf("kms server err: %s", exportKeyResp.Msg) // 修正错误包装方式
 	}
 
 	return &exportKeyResp.Data, nil

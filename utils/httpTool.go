@@ -67,13 +67,7 @@ func SendRequest(method, url string, header map[string]string, params interface{
 	}
 
 	defer response.Body.Close()
-	// 读取响应体
-	//var result map[string]interface{}
-	//err = json.NewDecoder(response.Body).Decode(&result)
-	//if err != nil {
-	//	logger.Error("Response decoding error:", err)
-	//	return nil, err
-	//}
+
 	// 读取响应体
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
@@ -216,73 +210,163 @@ func LoginRequest(method, url string, header map[string]string, params interface
 func AuthSendRequest(method, url string, params interface{}) (interface{}, error) {
 	// 参数验证
 	if url == "" {
-		return nil, errors.New("URL不能为空")
+		return nil, errors.New("URL 不能为空")
 	}
 
-	// 创建自定义的TLS配置，禁用证书验证
+	// 1. 预先序列化参数 (移到循环外，避免重复序列化)
+	var reqData []byte
+	if params != nil {
+		var err error
+		reqData, err = json.Marshal(params)
+		if err != nil {
+			return nil, fmt.Errorf("参数序列化失败：%w", err)
+		}
+	} else {
+		reqData = []byte{}
+	}
+
+	// 创建自定义的 TLS 配置，禁用证书验证
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
 	}
 
-	// 创建自定义的Transport，使用自定义的TLS配置
+	// 创建自定义的 Transport
 	tr := &http.Transport{
 		TLSClientConfig: tlsConfig,
 	}
 
-	// 序列化请求参数
-	var paramsBuffer *bytes.Buffer
-	if params != nil {
-		data, err := json.Marshal(params)
-		if err != nil {
-			return nil, fmt.Errorf("参数序列化失败: %w", err)
-		}
-		paramsBuffer = bytes.NewBuffer(data)
-	} else {
-		paramsBuffer = bytes.NewBuffer([]byte{})
-	}
-
-	// 创建HTTP客户端
+	// 创建 HTTP 客户端
 	client := &http.Client{
 		Transport: tr,
-		Timeout:   30 * time.Second, // 添加超时控制
+		Timeout:   30 * time.Second,
 	}
 
-	// 创建HTTP请求
-	req, err := http.NewRequest(method, url, paramsBuffer)
-	if err != nil {
-		return nil, fmt.Errorf("创建请求失败: %w", err)
-	}
+	// 2. 定义最大重试次数
+	const maxRetries = 3
+	var lastErr error
 
-	// 设置请求头
-	req.Header.Set("Content-Type", "application/json;charset=utf-8")
+	// 3. 循环执行请求
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		paramsBuffer := bytes.NewBuffer(reqData)
 
-	// 发送请求
-	response, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("发送请求失败: %w", err)
-	}
-	defer func() {
-		if closeErr := response.Body.Close(); closeErr != nil {
-			logger.Warnf("关闭响应体失败: %v", closeErr)
+		// 创建 HTTP 请求
+		req, err := http.NewRequest(method, url, paramsBuffer)
+		if err != nil {
+			return nil, fmt.Errorf("创建请求失败：%w", err)
 		}
-	}()
 
-	// 检查HTTP状态码
-	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return nil, fmt.Errorf("HTTP请求失败，状态码: %d", response.StatusCode)
+		// 设置请求头
+		req.Header.Set("Content-Type", "application/json;charset=utf-8")
+
+		// 发送请求
+		response, err := client.Do(req)
+		if err != nil {
+			lastErr = fmt.Errorf("发送请求失败：%w", err)
+			logger.Warnf("网络请求失败 (尝试 %d/%d): %v", attempt, maxRetries, err)
+			// 网络错误时，response 为 nil，无需 Close
+			if attempt < maxRetries {
+				time.Sleep(1 * time.Second)
+				continue
+			}
+			return nil, lastErr
+		}
+
+		// 【关键修复】先读取所有响应数据到内存，然后再关闭 Body
+		bodyBytes, readErr := ioutil.ReadAll(response.Body)
+
+		// 立即关闭 Body，释放连接
+		if closeErr := response.Body.Close(); closeErr != nil {
+			logger.Warnf("关闭响应体失败：%v", closeErr)
+		}
+
+		// 如果读取失败，记录错误并决定是否重试
+		if readErr != nil {
+			lastErr = fmt.Errorf("读取响应体失败：%w", readErr)
+			logger.Warnf("读取响应失败 (尝试 %d/%d): %v", attempt, maxRetries, readErr)
+			if attempt < maxRetries {
+				time.Sleep(1 * time.Second)
+				continue
+			}
+			return nil, lastErr
+		}
+
+		// 4. 检查 HTTP 状态码 (使用已读取的 bodyBytes 进行日志记录)
+		if response.StatusCode < 200 || response.StatusCode >= 300 {
+			lastErr = fmt.Errorf("HTTP 请求失败，状态码：%d", response.StatusCode)
+			logger.Warnf("HTTP 状态码异常 (尝试 %d/%d): code=%d, body=%s", attempt, maxRetries, response.StatusCode, string(bodyBytes))
+			if attempt < maxRetries {
+				time.Sleep(1 * time.Second)
+				continue
+			}
+			return nil, lastErr
+		}
+
+		// 替换原来的 json.Unmarshal 逻辑
+		var result map[string]interface{}
+		decoder := json.NewDecoder(bytes.NewReader(bodyBytes))
+		decoder.UseNumber() // 关键：将数字解析为 json.Number 而非 float64
+
+		if err := decoder.Decode(&result); err != nil {
+			lastErr = fmt.Errorf("响应解析失败：%w", err)
+			logger.Errorf("JSON 解析失败 (尝试 %d/%d): %v, 原始响应:%s", attempt, maxRetries, err, string(bodyBytes))
+			if attempt < maxRetries {
+				time.Sleep(1 * time.Second)
+				continue
+			}
+			return nil, lastErr
+		}
+		// 6. 检查业务状态码 code 是否为 0
+		codeVal, hasCode := result["code"]
+		if hasCode {
+			isSuccess := false
+			switch v := codeVal.(type) {
+			case json.Number:
+				// 尝试转换为 int64 或 float64 进行比较
+				iVal, err := v.Int64()
+				if err == nil && iVal == 0 {
+					isSuccess = true
+				} else {
+					fVal, _ := v.Float64()
+					if fVal == 0 {
+						isSuccess = true
+					}
+				}
+			case float64:
+				if v == 0 {
+					isSuccess = true
+				}
+			case int:
+				if v == 0 {
+					isSuccess = true
+				}
+			case string:
+				if v == "0" {
+					isSuccess = true
+				}
+			}
+
+			if !isSuccess {
+				lastErr = fmt.Errorf("业务请求失败：code=%v", codeVal)
+				msg := result["msg"]
+				logger.Warnf("业务状态码非 0 (尝试 %d/%d): code=%v, msg=%v", attempt, maxRetries, codeVal, msg)
+
+				if attempt < maxRetries {
+					time.Sleep(1 * time.Second)
+					continue
+				}
+				// 重试耗尽仍失败，返回结果和错误，方便调用方获取详细错误信息
+				return result, lastErr
+			}
+		}
+
+		// 成功
+		logger.Debugf("响应数据：%+v", result)
+		return result, nil
 	}
 
-	// 读取并解析响应体
-	var result map[string]interface{}
-	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("响应解析失败: %w", err)
-	}
-
-	// 记录响应数据
-	logger.Debugf("响应数据: %+v", result)
-
-	return result, nil
+	return nil, fmt.Errorf("未知错误：重试循环结束但未返回结果")
 }
+
 func HttpTlsPostReq(url string, params interface{}) (interface{}, error) {
 	//启用双向认证
 	config, err := createClientGMTLSConfig(CliKey1, CliCrt1, []string{CaCrt1})
